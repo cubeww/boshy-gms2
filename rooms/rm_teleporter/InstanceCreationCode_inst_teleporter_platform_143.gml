@@ -1,0 +1,1 @@
+sprite_index = spr_teleporter_platform_3331_mask;

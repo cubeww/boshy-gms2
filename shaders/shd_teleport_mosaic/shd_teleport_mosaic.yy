@@ -1,0 +1,9 @@
+{
+  "$GMShader":"",
+  "%Name":"shd_teleport_mosaic",
+  "name":"shd_teleport_mosaic",
+  "parent":{"name":"Rendering","path":"folders/Shared/Rendering.yy",},
+  "resourceType":"GMShader",
+  "resourceVersion":"2.0",
+  "type":1,
+}

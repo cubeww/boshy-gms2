@@ -1,0 +1,1 @@
+sprite_index = spr_cheetahmen_column_spike_right;

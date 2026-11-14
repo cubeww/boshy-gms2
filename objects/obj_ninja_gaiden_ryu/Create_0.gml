@@ -1,0 +1,11 @@
+is_cameo = false;
+ryu_active = false;
+ryu_facing_left = false;
+ryu_steps = -80;
+target_x = x;
+target_y = y;
+wave_interval = 0;
+paired_interval = 0;
+sword_clock = 0;
+cameo_dx = 0;
+cameo_dy = 0;

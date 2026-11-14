@@ -1,0 +1,1 @@
+castlevania_forest_effect_setup(CastlevaniaForestEffect.GhoulSparks);

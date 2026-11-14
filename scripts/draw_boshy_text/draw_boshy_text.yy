@@ -1,0 +1,10 @@
+{
+  "$GMScript":"v1",
+  "%Name":"draw_boshy_text",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"draw_boshy_text",
+  "parent":{"name":"Interface","path":"folders/Shared/Interface.yy",},
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}

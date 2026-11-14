@@ -1,0 +1,10 @@
+{
+  "$GMScript":"v1",
+  "%Name":"play_boshy_voice",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"play_boshy_voice",
+  "parent":{"name":"Boshy","path":"folders/Characters/Boshy.yy",},
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}

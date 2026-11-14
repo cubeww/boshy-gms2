@@ -1,0 +1,1 @@
+sprite_index = spr_biollante_arena_offscreen_mask;

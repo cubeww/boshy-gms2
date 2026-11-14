@@ -1,0 +1,2 @@
+sprite_index = spr_desert_secret_floor_narrow_trigger;
+floor_action = DesertSecretFloorAction.FragmentFloor;

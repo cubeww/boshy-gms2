@@ -1,0 +1,10 @@
+{
+  "$GMScript":"v1",
+  "%Name":"terrain_meeting",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"terrain_meeting",
+  "parent":{"name":"Terrain","path":"folders/Shared/Terrain.yy",},
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}

@@ -1,0 +1,13 @@
+{
+  "$GMScript":"v1",
+  "%Name":"trophy_catalog",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"trophy_catalog",
+  "parent":{
+    "name":"Scripts",
+    "path":"folders/Menus/Trophies/Scripts.yy",
+  },
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}

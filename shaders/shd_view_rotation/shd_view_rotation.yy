@@ -1,0 +1,9 @@
+{
+  "$GMShader":"",
+  "%Name":"shd_view_rotation",
+  "name":"shd_view_rotation",
+  "parent":{"name":"Rendering","path":"folders/Shared/Rendering.yy",},
+  "resourceType":"GMShader",
+  "resourceVersion":"2.0",
+  "type":1,
+}

@@ -1,0 +1,6 @@
+sprite_index = spr_green_greens_middle_spring;
+image_speed = 0;
+spring_force = 25;
+spring_age = -1;
+spring_touching = false;
+spring_sound = snd_green_greens_middle_high_spring;

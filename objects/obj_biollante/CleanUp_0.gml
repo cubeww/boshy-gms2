@@ -1,0 +1,3 @@
+audio_stop_sound(snd_biollante_roar);
+audio_stop_sound(snd_biollante_roar_alt);
+audio_stop_sound(snd_green_greens_middle_reflect);

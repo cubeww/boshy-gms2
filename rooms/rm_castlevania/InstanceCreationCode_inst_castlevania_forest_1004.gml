@@ -1,0 +1,1 @@
+castlevania_forest_trap_setup(CastlevaniaForestTrap.CurseSign);

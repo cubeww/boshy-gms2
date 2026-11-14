@@ -1,0 +1,1 @@
+sprite_index = spr_skeleton_king_mask_n1_0;

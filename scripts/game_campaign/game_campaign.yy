@@ -1,0 +1,10 @@
+{
+  "$GMScript":"v1",
+  "%Name":"game_campaign",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"game_campaign",
+  "parent":{"name":"Game","path":"folders/Shared/Game.yy",},
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}

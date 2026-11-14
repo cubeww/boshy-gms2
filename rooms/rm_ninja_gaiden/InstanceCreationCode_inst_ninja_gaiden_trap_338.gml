@@ -1,0 +1,1 @@
+sprite_index = spr_ninja_gaiden_spike_column_short;

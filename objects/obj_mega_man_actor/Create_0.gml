@@ -1,0 +1,9 @@
+enemy_age = 0;
+enemy_cooldown = 0;
+enemy_vx = 0;
+enemy_vy = 0;
+enemy_target_x = x;
+enemy_facing = 1;
+enemy_active = true;
+enemy_flash = 0;
+enemy_touching_backdrop = false;

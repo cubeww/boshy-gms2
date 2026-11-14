@@ -1,0 +1,9 @@
+ball_age = 0;
+ball_x = x;
+ball_y = y;
+ball_speed_y = -2;
+ball_angle = 0;
+animation_age = 0;
+shot_cooldown = 0;
+facing = 1;
+sprite_angle = 0;

@@ -1,0 +1,1 @@
+sprite_index = spr_shang_tsung_entry_spike_right;

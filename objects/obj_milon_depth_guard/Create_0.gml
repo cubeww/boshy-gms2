@@ -1,0 +1,9 @@
+guard_horizontal_speed = 1;
+guard_vertical_speed = 0;
+guard_facing = -1;
+guard_alerted = false;
+guard_alert_time = 0;
+guard_alert_steps = 54;
+guard_question_steps = 6;
+guard_announced = false;
+guard_detector = instance_create_depth(x, y, depth, obj_milon_depth_guard_detector);

@@ -1,0 +1,1 @@
+sprite_index = spr_desert_secret_animated_spike_down;

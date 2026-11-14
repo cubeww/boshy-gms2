@@ -1,0 +1,1 @@
+sprite_index = spr_cheetahmen_cake_platform_outline;

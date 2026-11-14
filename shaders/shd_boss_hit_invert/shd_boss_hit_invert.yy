@@ -1,0 +1,9 @@
+{
+  "$GMShader":"",
+  "%Name":"shd_boss_hit_invert",
+  "name":"shd_boss_hit_invert",
+  "parent":{"name":"Rendering","path":"folders/Shared/Rendering.yy",},
+  "resourceType":"GMShader",
+  "resourceVersion":"2.0",
+  "type":1,
+}

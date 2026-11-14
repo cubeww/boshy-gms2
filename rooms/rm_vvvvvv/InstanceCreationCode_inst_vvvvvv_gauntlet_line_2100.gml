@@ -1,0 +1,1 @@
+gauntlet_floor = false;

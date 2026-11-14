@@ -1,0 +1,13 @@
+{
+  "$GMScript":"v1",
+  "%Name":"game_settings",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"game_settings",
+  "parent":{
+    "name":"Game",
+    "path":"folders/Shared/Game.yy",
+  },
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}

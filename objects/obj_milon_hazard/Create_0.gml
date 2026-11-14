@@ -1,0 +1,9 @@
+hazard_kind = MilonHazard.NarrowSpike;
+hazard_age = 0;
+armed = false;
+travel_x = x;
+travel_y = y;
+travel_speed = 5;
+vertical_speed = 0;
+scream = -1;
+image_speed = 0;

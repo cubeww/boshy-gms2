@@ -1,0 +1,13 @@
+{
+  "$GMScript":"v1",
+  "%Name":"title_collectable_display",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"title_collectable_display",
+  "parent":{
+    "name":"Scripts",
+    "path":"folders/Menus/Title/Scripts.yy",
+  },
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}

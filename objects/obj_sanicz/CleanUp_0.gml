@@ -1,0 +1,9 @@
+audio_stop_sound(snd_sanicz_too_slow);
+audio_stop_sound(snd_sanicz_show_you);
+audio_stop_sound(snd_sanicz_voice_13);
+audio_stop_sound(snd_sanicz_voice_30);
+audio_stop_sound(snd_sanicz_voice_31);
+audio_stop_sound(snd_sanicz_voice_41);
+audio_stop_sound(snd_sanicz_voice_43);
+audio_stop_sound(snd_sanicz_voice_46);
+audio_stop_sound(snd_stock_select_sonic);

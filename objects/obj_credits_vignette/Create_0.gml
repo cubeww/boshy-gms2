@@ -1,0 +1,17 @@
+motion = CreditsMotion.None;
+home_x = x;
+home_y = y;
+wrap_left = 0;
+wrap_right = 0;
+motion_speed = 0;
+bounce_platform = -1;
+motion_direction = 1;
+phase_offset = 0;
+phase_steps = 0;
+animation_ticks = 0;
+animation_rate = 0;
+image_speed = 0;
+shot_interval = 30;
+additive = false;
+effects = [];
+panorama_surface = -1;

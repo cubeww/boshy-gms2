@@ -1,0 +1,1 @@
+sprite_index = spr_green_greens_middle_water_surface;

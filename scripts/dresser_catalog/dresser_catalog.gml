@@ -1,0 +1,42 @@
+// The Dresser uses the original profile character IDs and button positions.
+// Portrait frames are grouped by ID in spr_dresser_portraits, with locked art after each normal animation.
+function dresser_catalog() {
+    return [
+        { id: 12, name: "Boshy", x: 80, y: 272, unlock_key: "", icon: 0, icon_count: 2, icon_rate: 7, locked_icon: -1 },
+        { id: 56, name: "Dig Dug", x: 128, y: 272, unlock_key: "", icon: 46, icon_count: 2, icon_rate: 15, locked_icon: -1 },
+        { id: 112, name: "Simon Belmont", x: 176, y: 272, unlock_key: "Simon Belmont", icon: 76, icon_count: 4, icon_rate: 30, locked_icon: 80 },
+        { id: 16, name: "The Kid", x: 224, y: 272, unlock_key: "", icon: 2, icon_count: 4, icon_rate: 30, locked_icon: -1 },
+        { id: 20, name: "Kirby", x: 272, y: 272, unlock_key: "Kirby", icon: 6, icon_count: 12, icon_rate: 30, locked_icon: 18 },
+        { id: 124, name: "Mr Game And Watch", x: 320, y: 272, unlock_key: "Mr Game And Watch", icon: 83, icon_count: 2, icon_rate: 5, locked_icon: 85 },
+        { id: 140, name: "Quote", x: 368, y: 272, unlock_key: "Quote", icon: 94, icon_count: 1, icon_rate: 7, locked_icon: 95 },
+        { id: 24, name: "Blob", x: 416, y: 272, unlock_key: "", icon: 19, icon_count: 8, icon_rate: 30, locked_icon: -1 },
+        { id: 28, name: "Pedobear", x: 464, y: 272, unlock_key: "", icon: 27, icon_count: 1, icon_rate: 30, locked_icon: -1 },
+        { id: 108, name: "Ice Climbers", x: 512, y: 272, unlock_key: "", icon: 75, icon_count: 1, icon_rate: 15, locked_icon: -1 },
+        { id: 116, name: "Nyan Cat", x: 560, y: 272, unlock_key: "", icon: 81, icon_count: 1, icon_rate: 7, locked_icon: -1 },
+        { id: 136, name: "Ryu", x: 64, y: 320, unlock_key: "Ryu", icon: 92, icon_count: 1, icon_rate: 7, locked_icon: 93 },
+        { id: 80, name: "Solgryn", x: 112, y: 320, unlock_key: "Solgryn", icon: 58, icon_count: 1, icon_rate: 7, locked_icon: 59 },
+        { id: 32, name: "Mario", x: 160, y: 320, unlock_key: "Mario", icon: 28, icon_count: 1, icon_rate: 30, locked_icon: 29 },
+        { id: 76, name: "Luigi", x: 208, y: 320, unlock_key: "Luigi", icon: 56, icon_count: 1, icon_rate: 30, locked_icon: 57 },
+        { id: 40, name: "Spike", x: 256, y: 320, unlock_key: "Spike", icon: 33, icon_count: 7, icon_rate: 40, locked_icon: 40 },
+        { id: 88, name: "Sonic", x: 320, y: 320, unlock_key: "Sonic", icon: 63, icon_count: 2, icon_rate: 7, locked_icon: 65 },
+        { id: 44, name: "Bubblun", x: 384, y: 320, unlock_key: "", icon: 41, icon_count: 2, icon_rate: 10, locked_icon: -1 },
+        { id: 36, name: "Ash Ketchum", x: 432, y: 320, unlock_key: "Ash Ketchum", icon: 30, icon_count: 2, icon_rate: 15, locked_icon: 32 },
+        { id: 48, name: "Link", x: 480, y: 320, unlock_key: "", icon: 43, icon_count: 2, icon_rate: 10, locked_icon: -1 },
+        { id: 84, name: "Dark Boshy", x: 528, y: 320, unlock_key: "Dark Boshy", icon: 60, icon_count: 2, icon_rate: 7, locked_icon: 62 },
+        { id: 128, name: "Logi Bear", x: 576, y: 320, unlock_key: "", icon: 86, icon_count: 4, icon_rate: 30, locked_icon: -1 },
+        { id: 148, name: "Sagat", x: 32, y: 368, unlock_key: "Sagat", icon: 98, icon_count: 1, icon_rate: 7, locked_icon: 99 },
+        { id: 100, name: "Quadrick", x: 80, y: 368, unlock_key: "", icon: 69, icon_count: 2, icon_rate: 5, locked_icon: -1 },
+        { id: 96, name: "Meat Boy", x: 128, y: 368, unlock_key: "", icon: 68, icon_count: 1, icon_rate: 30, locked_icon: -1 },
+        { id: 92, name: "Excite Bike", x: 176, y: 368, unlock_key: "", icon: 66, icon_count: 2, icon_rate: 30, locked_icon: -1 },
+        { id: 52, name: "Black Mage", x: 224, y: 368, unlock_key: "", icon: 45, icon_count: 1, icon_rate: 10, locked_icon: -1 },
+        { id: 68, name: "Megaman", x: 272, y: 368, unlock_key: "", icon: 52, icon_count: 1, icon_rate: 10, locked_icon: -1 },
+        { id: 132, name: "Yoshi", x: 320, y: 368, unlock_key: "", icon: 90, icon_count: 2, icon_rate: 5, locked_icon: -1 },
+        { id: 60, name: "Ness", x: 368, y: 368, unlock_key: "", icon: 48, icon_count: 2, icon_rate: 7, locked_icon: -1 },
+        { id: 144, name: "Orc", x: 416, y: 368, unlock_key: "Orc", icon: 96, icon_count: 1, icon_rate: 7, locked_icon: 97 },
+        { id: 64, name: "Kappa", x: 464, y: 368, unlock_key: "Kappa", icon: 50, icon_count: 1, icon_rate: 30, locked_icon: 51 },
+        { id: 72, name: "Pit", x: 512, y: 368, unlock_key: "Pit", icon: 53, icon_count: 2, icon_rate: 15, locked_icon: 55 },
+        { id: 104, name: "Ope", x: 560, y: 368, unlock_key: "", icon: 71, icon_count: 4, icon_rate: 15, locked_icon: -1 },
+        { id: 152, name: "Arthur", x: 608, y: 368, unlock_key: "Arthur", icon: 100, icon_count: 1, icon_rate: 7, locked_icon: 101 },
+        { id: 120, name: "Golden Pedobear", x: 688, y: 304, unlock_key: "supaBearGetto", icon: 82, icon_count: 1, icon_rate: 7, locked_icon: -1, unlocked_x: 592 }
+    ];
+}

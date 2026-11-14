@@ -1,0 +1,10 @@
+{
+  "$GMScript":"v1",
+  "%Name":"game_character_selection",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"game_character_selection",
+  "parent":{"name":"Characters","path":"folders/Characters.yy",},
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}
