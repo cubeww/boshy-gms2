@@ -3,10 +3,11 @@ if (trophy_steps >= 0 && ++trophy_steps >= 226) {
 }
 var _player = instance_find(obj_player, 0);
 prehistorik_pickups_step(_player);
+chest_view_update(game_controller, _player, prehistorik_pickup_slot >= 0 ? prehistorik_pickup_age : -1);
 if (instance_number(obj_bullet) >= 5 && game_trophy_unlock("TriggerFinger")) {
     milon_show_trophy("TRIGGER FINGER!!");
 }
-var _portal = room == rm_milon ? inst_milon_prehistorik_portal : inst_milon_depths_hub_portal;
+var _portal = room == rm_milon ? inst_milon_wow_portal : inst_milon_depths_hub_portal;
 if (_player == noone || _player.dead) {
     if (portal_steps >= 0) {
         portal_steps = -1;
@@ -54,14 +55,7 @@ if (portal_steps >= 0) {
     game_controller.teleport_mosaic_columns = game_controller.render_width div _pixel_size;
     game_controller.teleport_mosaic_rows = game_controller.render_height div _pixel_size;
     if (portal_steps >= 80) {
-        if (room == rm_milon) {
-            global.prehistorik_portal_arrival = true;
-            global.prehistorik_return_position = { x: 47, y: 329 };
-            room_goto(rm_prehistorik);
-        } else {
-            // Depths G868 uses the Teleporter Room's main entry.
-            game_travel_by_teleporter(_portal.destination_room, _portal.destination_x, _portal.destination_y);
-        }
+        game_travel_by_teleporter(_portal.destination_room, _portal.destination_x, _portal.destination_y);
     }
     exit;
 }

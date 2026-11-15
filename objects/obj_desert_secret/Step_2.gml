@@ -30,7 +30,5 @@ if (exit_age >= 0) {
         room_goto(rm_desert);
         exit;
     }
-} else if (!_player.input_locked && ninja_gaiden_toggle_cd()) {
-    play_stage_track();
 }
 update_view(_player, _floor);

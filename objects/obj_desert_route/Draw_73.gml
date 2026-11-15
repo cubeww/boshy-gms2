@@ -23,22 +23,28 @@ if (trophy_steps < 0) {
     exit;
 }
 
-var _alpha = 1 - max(0, trophy_steps - 200) / 26;
-var _bounce = 0;
-if (trophy_steps < 15) {
-    var _beat = trophy_steps div 2;
-    _bounce = (15 - 2 * _beat) * (_beat mod 2 == 0 ? -1 : 1);
-}
-draw_sprite_ext(spr_tutorial_achievement_banner, 0, _left + 434 * _scale_x, _top + 7 * _scale_y,
-    _scale_x, _scale_y, 0, c_white, _alpha);
-draw_sprite_part_ext(spr_trophy_icon, 1, 0, 6, 32, 32, _left + 440 * _scale_x,
-    _top + (13 + _bounce) * _scale_y, _scale_x, _scale_y, c_white, _alpha);
-var _lines = string_split(trophy_title, "\n");
-var _letters = trophy_steps;
-for (var _i = 0; _i < array_length(_lines) && _letters > 0; ++_i) {
-    var _line = _lines[_i];
-    var _length = string_length(_line);
-    draw_boshy_text(string_copy(_line, 1, _letters), _left + (628 - _length * 8) * _scale_x,
-        _top + (17 + _bounce + 12 * _i) * _scale_y, _alpha, _scale_x);
-    _letters -= _length;
-}
+chest_draw_overlay(function(_view) {
+    var _left = _view.left;
+    var _top = _view.top;
+    var _scale_x = _view.scale_x;
+    var _scale_y = _view.scale_y;
+    var _alpha = 1 - max(0, trophy_steps - 200) / 26;
+    var _bounce = 0;
+    if (trophy_steps < 15) {
+        var _beat = trophy_steps div 2;
+        _bounce = (15 - 2 * _beat) * (_beat mod 2 == 0 ? -1 : 1);
+    }
+    draw_sprite_ext(spr_tutorial_achievement_banner, 0, _left + 434 * _scale_x, _top + 7 * _scale_y,
+        _scale_x, _scale_y, 0, c_white, _alpha);
+    draw_sprite_part_ext(spr_trophy_icon, 1, 0, 6, 32, 32, _left + 440 * _scale_x,
+        _top + (13 + _bounce) * _scale_y, _scale_x, _scale_y, c_white, _alpha);
+    var _lines = string_split(trophy_title, "\n");
+    var _letters = trophy_steps;
+    for (var _i = 0; _i < array_length(_lines) && _letters > 0; ++_i) {
+        var _line = _lines[_i];
+        var _length = string_length(_line);
+        draw_boshy_text(string_copy(_line, 1, _letters), _left + (628 - _length * 8) * _scale_x,
+            _top + (17 + _bounce + 12 * _i) * _scale_y, _alpha, _scale_x);
+        _letters -= _length;
+    }
+});

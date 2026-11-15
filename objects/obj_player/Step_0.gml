@@ -1,4 +1,12 @@
 jumped_this_step = false;
+if (secret_1_1_poison_steps > 0) {
+    stop_walk_sound();
+    if (++secret_1_1_poison_steps > 50 && !die()) {
+        secret_1_1_poison_steps = 0;
+        input_locked = false;
+    }
+    exit;
+}
 if (room == rm_kid_icarus) {
     sliding_block_vertical_direction = 0;
 }
@@ -7,6 +15,7 @@ var _missingno = room == rm_missingno ? instance_find(obj_missingno, 0) : noone;
 var _confused = _missingno != noone && _missingno.attack_player_confused;
 var _jump_key = _confused ? _keys.shoot : _keys.jump;
 var _shoot_key = _confused ? _keys.jump : _keys.shoot;
+var _pose_tick = custom_pose_timing ? 1 : delta_time / 20000;
 if (input_locked) {
     stop_walk_sound();
     if (room == rm_kid_icarus && kid_icarus_blob_player_locked()) {
@@ -17,11 +26,11 @@ if (input_locked) {
     } else if (room == rm_missingno && instance_exists(obj_missingno_tri_freeze)) {
         // G24/G40 still accept a new shot during the ice lock. Auto Fire checks flag 1.
         update_player_shooting(visual_facing() < 0 ? left_poses : character.poses, false, _shoot_key);
-        if (shoot_pose_steps > 0) {
+        if (shoot_pose_remaining > 0) {
             pose = PlayerPose.Shoot;
             pose_frame = 0;
             pose_steps = 0;
-            --shoot_pose_steps;
+            shoot_pose_remaining -= _pose_tick;
         }
         if (touching_hazard()) {
             die();
@@ -36,6 +45,7 @@ var _previous_x = x;
 var _previous_y = y;
 var _was_grounded = grounded;
 var _movement = _snake == noone ? character.movement : desert_snake_movement();
+var _jump_speed = room == rm_wow ? wow_jump_speed : _movement.jump_speed;
 var _jump_pressed = keyboard_check_pressed(_jump_key);
 var _depth_stage = room == rm_milon_depths ? instance_find(obj_milon, 0) : noone;
 var _wall_direction = 0;
@@ -52,12 +62,16 @@ if (_jump_pressed && !gravity_flip_enabled) {
     // Skeleton King group 713 gives the lift probe its own jump and sound.
     var _lift = room == rm_skeleton_king ? instance_find(obj_skeleton_king_lift, 0) : noone;
     var _lift_hop = _lift != noone && _lift.rider_probe_overlaps(x, y);
+    var _milon_lift = noone;
     if (room == rm_milon) {
         // Milon groups 740 and 800 use Active 23 instead of the ground probe.
         var _player_x = x;
         var _player_y = y;
         with (obj_milon_lift) {
-            _lift_hop = _lift_hop || milon_rider_probe_overlaps(_player_x, _player_y);
+            if (milon_rider_probe_overlaps(_player_x, _player_y)) {
+                _milon_lift = id;
+                break;
+            }
         }
     }
     if (_wall_direction != 0) {
@@ -72,13 +86,15 @@ if (_jump_pressed && !gravity_flip_enabled) {
         if (_wall_jump_sound != noone) {
             audio_play_sound(_wall_jump_sound, 1, false);
         }
+    } else if (_milon_lift != noone) {
+        _milon_lift.launch_rider(id);
     } else if (_lift_hop) {
         vsp = -_movement.jump_speed;
         grounded = false;
         jumped_this_step = true;
         audio_play_sound(snd_skeleton_king_hop, 1, false);
     } else if (grounded && _snake == noone) {
-        vsp = -_movement.jump_speed;
+        vsp = -_jump_speed;
         grounded = false;
         jumped_this_step = true;
         jump_cut_enabled = true;
@@ -87,11 +103,14 @@ if (_jump_pressed && !gravity_flip_enabled) {
             audio_play_sound(_jump_sound, 1, false);
         }
     } else if (air_jump_available) {
-        vsp = -_movement.jump_speed * 0.85;
+        vsp = -_jump_speed * 0.85;
         air_jump_available = false;
         jumped_this_step = true;
         jump_cut_enabled = true;
-        audio_play_sound(_settings.special_jump_sounds ? character.air_jump_sound : snd_air_jump, 1, false);
+        var _air_jump_sound = _settings.special_jump_sounds ? character.air_jump_sound : snd_air_jump;
+        if (_air_jump_sound != noone) {
+            audio_play_sound(_air_jump_sound, 1, false);
+        }
         if (_snake != noone) {
             audio_play_sound(snd_desert_snake_double_jump, 1, false);
         }
@@ -105,12 +124,15 @@ if (_depth_stage != noone && jumped_this_step) {
 if (_snake != noone) {
     desert_snake_move(id, _snake);
 } else {
-    move_player_horizontal(keyboard_check(vk_down));
+    move_player_horizontal(keyboard_check(_keys.down));
     if (room == rm_kid_icarus) {
         // The vertical loop can clear the approach speed when it reaches a sliding block.
         sliding_block_vertical_direction = sign(vsp);
     }
     move_player_vertical();
+}
+if (dead) {
+    exit;
 }
 if (room == rm_solgryn && y < _previous_y && y <= 25) {
     with (obj_solgryn) {
@@ -124,7 +146,7 @@ if (room == rm_biollante || room == rm_wario || room == rm_sanicz || room == rm_
     || room == rm_mega_man_world || room == rm_shang_tsung || room == rm_kid_icarus || room == rm_bomberman
     || room == rm_ninja_gaiden || room == rm_missingno || room == rm_desert || room == rm_desert_secret
     || room == rm_final_path || room == rm_solgryn || room == rm_credits || room == rm_prize_room
-    || room == rm_teleporter) {
+    || room == rm_teleporter || room == rm_cheetah_men) {
     // Fusion's playfield boundary test uses the original 30 x 30 canvas, including transparent margins.
     var _origin_x = facing < 0 ? 14 : 15;
     _outside_room = x - _origin_x + 30 <= 0 || x - _origin_x >= room_width
@@ -155,8 +177,8 @@ if (grounded) {
 }
 
 // The original checks both held directions, then slows momentum toward a released direction.
-var _right = keyboard_check(_confused ? _keys.left : _keys.right);
-var _left = keyboard_check(_confused ? _keys.right : _keys.left);
+var _right = keyboard_check(game_horizontal_key(_keys, true, _confused));
+var _left = keyboard_check(game_horizontal_key(_keys, false, _confused));
 if (_right) {
     if (hsp < _movement.run_speed) {
         hsp += _movement.acceleration;
@@ -277,9 +299,9 @@ if (_refill != noone) {
 update_player_shooting(_poses, true, _shoot_key);
 
 var _next_pose = PlayerPose.Idle;
-if (shoot_pose_steps > 0) {
+if (shoot_pose_remaining > 0) {
     _next_pose = PlayerPose.Shoot;
-    --shoot_pose_steps;
+    shoot_pose_remaining -= _pose_tick;
 } else if (_on_wall && !jumped_this_step
     && (room == rm_kid_icarus || room == rm_ninja_gaiden || room == rm_desert_secret)) {
     // G897 forces empty animation slot 15, which Fusion resolves to the idle clip.
@@ -296,15 +318,20 @@ if (_next_pose != pose) {
     pose_steps = 0;
 } else {
     ++pose_steps;
-    var _clip = _poses[pose];
-    var _count = array_length(_clip.frames);
-    pose_frame += _clip.rate;
-    if (pose_frame >= _count) {
-        if (_clip.loop) {
-            var _loop_start = struct_exists(_clip, "loop_start") ? _clip.loop_start : 0;
-            pose_frame = _loop_start + (pose_frame - _loop_start) mod (_count - _loop_start);
-        } else {
-            pose_frame = _count - 1;
+    if (custom_pose_timing) {
+        pose_frame = custom_character_frame_at(character.custom.animations[pose], pose_steps);
+    } else {
+        var _clip = _poses[pose];
+        var _count = array_length(_clip.frames);
+        // Fusion rounds the timed animation advance in hundredths of a frame.
+        pose_frame += floor(_clip.rate * _pose_tick * 100 + 0.5) / 100;
+        if (pose_frame >= _count) {
+            if (_clip.loop) {
+                var _loop_start = struct_exists(_clip, "loop_start") ? _clip.loop_start : 0;
+                pose_frame = _loop_start + (pose_frame - _loop_start) mod (_count - _loop_start);
+            } else {
+                pose_frame = _count - 1;
+            }
         }
     }
 }
@@ -329,3 +356,4 @@ if (room == rm_vvvvvv) {
 } else if (room == rm_desert) {
     desert_switch_touch(id);
 }
+custom_character_player_trail_step();

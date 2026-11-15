@@ -7,6 +7,7 @@ function missingno_pose_setup() {
     hit_flash_age = 0;
     pose_ink = 0;
     pose_attack_additive = false;
+    pose_trail_wait_us = 50000;
 }
 
 function missingno_pose_step() {
@@ -36,12 +37,15 @@ function missingno_pose_step() {
             instance_destroy();
         }
     }
-    var _elapsed_ms = scene_steps * 20;
-    if (hit_points > 0 && _elapsed_ms div 50 != (_elapsed_ms - 20) div 50 && scene_steps > 0) {
-        instance_create_layer(x, y, "Boss Afterimages", obj_missingno_pose_trail, {
-            image_xscale: image_xscale,
-            image_yscale: image_yscale
-        });
+    pose_trail_wait_us -= delta_time;
+    if (pose_trail_wait_us <= 0) {
+        pose_trail_wait_us += 50000;
+        if (hit_points > 0) {
+            instance_create_layer(x, y, "Boss Afterimages", obj_missingno_pose_trail, {
+                image_xscale: image_xscale,
+                image_yscale: image_yscale
+            });
+        }
     }
 }
 

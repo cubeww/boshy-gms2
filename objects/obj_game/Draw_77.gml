@@ -1,10 +1,12 @@
 var _viewport = get_viewport_rectangle();
 if (is_undefined(_viewport)) {
+    chest_view_overlays = [];
     exit;
 }
 
 draw_clear(c_black);
 if (!surface_exists(application_surface)) {
+    chest_view_overlays = [];
     exit;
 }
 
@@ -20,13 +22,15 @@ var _scene_cos = 1;
 var _scene_sin = 0;
 var _scene_offset_x = 0;
 var _scene_offset_y = 0;
+var _scene_mirrored = game_view_mirrored() && room != rm_title;
 var _scene_flipped = false;
+var _crop = chest_view_uniform == -1 ? undefined : chest_view_crop;
 var _path_exit = room == rm_final_path ? instance_find(obj_final_path_exit, 0) : noone;
 var _solgryn = room == rm_solgryn ? instance_find(obj_solgryn, 0) : noone;
 var _path_drawn = _path_exit != noone && _path_exit.draw_final_path_scene(
     application_surface, _viewport.left, _viewport.top, _viewport.width, _viewport.height);
 if (_solgryn != noone && _solgryn.solgryn_history_alpha > 0) {
-    _solgryn.solgryn_draw_history(application_surface, _viewport);
+    _solgryn.solgryn_draw_history(application_surface, _viewport, _scene_mirrored);
 } else if (!_path_drawn) {
     var _mosaic = teleport_mosaic_uniform != -1 && teleport_mosaic_columns > 0 && teleport_mosaic_rows > 0;
     var _blur = directional_blur_uniform != -1 && (directional_blur_x != 0 || directional_blur_y != 0
@@ -34,6 +38,19 @@ if (_solgryn != noone && _solgryn.solgryn_history_alpha > 0) {
     var _rotate = screen_rotation_uniform != -1 && screen_rotation != 0;
     var _desert = room == rm_desert ? instance_find(obj_desert, 0) : noone;
     var _heat = desert_heat_phase_uniform != -1 && _desert != noone;
+    var _effects = _mosaic || _blur || _rotate || _heat;
+    var _crop_with_effects = !is_undefined(_crop) && _effects;
+    if (_crop_with_effects) {
+        if (!surface_exists(chest_view_effect_surface)) {
+            chest_view_effect_surface = surface_create(render_width, render_height);
+        }
+        _crop_with_effects = surface_exists(chest_view_effect_surface);
+        if (_crop_with_effects) {
+            surface_set_target(chest_view_effect_surface);
+        } else {
+            _crop = undefined;
+        }
+    }
     if (_mosaic && !(_solgryn != noone && _blur)) {
         shader_set(shd_teleport_mosaic);
         shader_set_uniform_f(teleport_mosaic_uniform, teleport_mosaic_columns, teleport_mosaic_rows);
@@ -57,17 +74,26 @@ if (_solgryn != noone && _solgryn.solgryn_history_alpha > 0) {
         shader_set_uniform_f(desert_heat_size_uniform, render_width, render_height);
     }
     _scene_flipped = flip_view_y;
-    if (_scene_flipped) {
-        draw_surface_ext(application_surface, _viewport.left, _viewport.top + _viewport.height,
-            _viewport.width / render_width, -_viewport.height / render_height, 0, c_white, 1);
-    } else {
-        draw_surface_stretched(application_surface, _viewport.left, _viewport.top, _viewport.width, _viewport.height);
+    if (_crop_with_effects) {
+        draw_surface(application_surface, 0, 0);
+        shader_reset();
+        surface_reset_target();
     }
-    if (_mosaic || _blur || _rotate || _heat) {
+
+    var _source = application_surface;
+    if (!is_undefined(_crop)) {
+        _source = _crop_with_effects ? chest_view_effect_surface : application_surface;
+        shader_set(shd_chest_view);
+        shader_set_uniform_f(chest_view_uniform, _crop.left, _crop.top, _crop.width, _crop.height);
+        shader_set_uniform_f(chest_view_size_uniform, render_width, render_height);
+    }
+    draw_scene_surface(_source, _viewport, _scene_mirrored, _scene_flipped);
+    if (_effects || !is_undefined(_crop)) {
         shader_reset();
     }
 }
 gpu_set_blendenable(_blend_enabled);
+chest_draw_overlays(id, _viewport);
 
 if (room == rm_biollante) {
     with (obj_biollante) {
@@ -91,6 +117,34 @@ if (room == rm_biollante) {
     _solgryn.draw_solgryn_readouts(_viewport.left, _viewport.top, _hud_scale);
     with (_solgryn) {
         solgryn_victory_draw(_viewport);
+    }
+}
+
+if (_scene_mirrored) {
+    var _overlay_scale = _viewport.width / render_width;
+    draw_gameplay_readouts(_viewport.left, _viewport.top, _overlay_scale);
+    with (obj_game_over) {
+        draw_death_panel(_viewport.left, _viewport.top, _overlay_scale);
+    }
+}
+
+if (array_length(achievement_notifications) > 0 && achievement_notification_age > 0) {
+    var _scale = _viewport.width / render_width;
+    var _alpha = 1 - max(0, achievement_notification_age - 200) / 26;
+    draw_sprite_ext(spr_tutorial_achievement_banner, 0,
+        _viewport.left + 434 * _scale, _viewport.top + 7 * _scale, _scale, _scale, 0, c_white, _alpha);
+    draw_sprite_part_ext(spr_trophy_icon, 1, 0, 6, 32, 32,
+        _viewport.left + 440 * _scale, _viewport.top + 13 * _scale, _scale, _scale, c_white, _alpha);
+    var _lines = string_split(achievement_notifications[0], "\n");
+    var _letters = achievement_notification_age;
+    var _text_y = array_length(_lines) == 1 ? 22 : 16;
+    for (var _i = 0; _i < array_length(_lines) && _letters > 0; ++_i) {
+        var _line = _lines[_i];
+        var _length = string_length(_line);
+        draw_boshy_text(string_copy(_line, 1, _letters),
+            _viewport.left + (628 - _length * 8) * _scale,
+            _viewport.top + (_text_y + _i * 12) * _scale, _alpha, _scale);
+        _letters -= _length;
     }
 }
 
@@ -132,11 +186,20 @@ var _mouse_text = "Outside viewport";
 var _center_x = render_width * 0.5;
 var _center_y = render_height * 0.5;
 if (_mouse_x >= 0 && _mouse_x < render_width && _mouse_y >= 0 && _mouse_y < render_height) {
-    _mouse_x = floor(_mouse_x) + 0.5 + _scene_offset_x;
+    _mouse_x = floor(_mouse_x) + 0.5;
     _mouse_y = floor(_mouse_y) + 0.5;
+    if (_scene_mirrored) {
+        _mouse_x = render_width - _mouse_x;
+    }
     if (_scene_flipped) {
         _mouse_y = render_height - _mouse_y;
     }
+    if (!is_undefined(_crop)) {
+        var _sample = chest_view_sample(_crop, _mouse_x, _mouse_y, render_width, render_height);
+        _mouse_x = _sample.x;
+        _mouse_y = _sample.y;
+    }
+    _mouse_x += _scene_offset_x;
     _mouse_y += _scene_offset_y;
     if (_mouse_x >= 0 && _mouse_x < render_width && _mouse_y >= 0 && _mouse_y < render_height) {
         var _dx = _mouse_x - _center_x;
@@ -198,6 +261,13 @@ if (_actor != noone) {
     }
     _actor_x -= _scene_offset_x;
     _actor_y -= _scene_offset_y;
+    if (!is_undefined(_crop)) {
+        _actor_x = (_actor_x - _crop.left) * render_width / _crop.width;
+        _actor_y = (_actor_y - _crop.top) * render_height / _crop.height;
+    }
+    if (_scene_mirrored) {
+        _actor_x = render_width - _actor_x;
+    }
     if (_scene_flipped) {
         _actor_y = render_height - _actor_y;
     }
@@ -209,6 +279,11 @@ if (_actor != noone) {
     var _sprite_scale = max(abs(_actor.image_xscale), abs(_actor.image_yscale));
     if (_player != noone) {
         _sprite = _player.visual_facing() < 0 ? _player.character.sprite_left : _player.character.sprite_right;
+        if (struct_exists(_player.character, "custom")) {
+            var _frames = _player.character.poses[_player.pose].frames;
+            var _frame = _frames[clamp(floor(_player.pose_frame), 0, array_length(_frames) - 1)];
+            _sprite = game_character_sprite(_player.character, _player.pose, _frame, _player.visual_facing()).sprite;
+        }
         if (room != rm_missingno) {
             _sprite_scale = 1;
         }
@@ -220,6 +295,9 @@ if (_actor != noone) {
     var _radius = point_distance(0, 0, max(_ox, sprite_get_width(_sprite) - _ox),
         max(_oy, sprite_get_height(_sprite) - _oy)) * _sprite_scale;
     _radius *= max(render_width / _view_width, render_height / _view_height);
+    if (!is_undefined(_crop)) {
+        _radius *= max(render_width / _crop.width, render_height / _crop.height);
+    }
     if (_actor_x + _radius >= _left && _actor_x - _radius <= _left + _width
         && _actor_y + _radius >= _top && _actor_y - _radius <= _top + _height) {
         _top = render_height - _height - 8;

@@ -24,19 +24,6 @@ update_view = function(_player, _immediate = false) {
     layer_y(background_layer, view_top - floor(view_top * 0.1));
 };
 
-play_stage_track = function() {
-    var _entry = ninja_gaiden_selected_cd();
-    if (!is_undefined(_entry)) {
-        game_controller.start_stage_music(_entry[2], true, true, _entry[3]);
-    } else {
-        if (global.run.ninja_gaiden_cd > 0) {
-            global.run.ninja_gaiden_cd = 0;
-            global.run.music_position = 0;
-        }
-        game_controller.start_stage_music(snd_final_path_music);
-    }
-};
-
 reset_hub_portal = function(_portal) {
     portal_age = -1;
     _portal.image_index = 0;

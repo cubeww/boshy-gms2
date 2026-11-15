@@ -30,20 +30,18 @@ enum CreditsMotion {
     Solgryn,
     Firebar,
     ShangCloud,
-    ShangBridge
-}
-
-function credits_near_view(_y, _top, _margin) {
-    return _y >= _top - _margin && _y < _top + 480 + _margin;
+    ShangBridge,
+    DesertMist,
+    KidIcarusFloor,
+    KidIcarusPlatform
 }
 
 function credits_actor_inside_view(_top, _margin) {
-    return credits_sprite_inside_view(sprite_index, x, y, image_xscale, image_yscale,
-        image_angle, _top, _margin);
+    var _bounds = credits_sprite_canvas_bounds(sprite_index, x, y, image_xscale, image_yscale, image_angle);
+    return credits_bounds_inside_view(_bounds, _top, _margin);
 }
 
-function credits_sprite_inside_view(_sprite, _x, _y, _xscale, _yscale, _angle, _top, _margin) {
-    // Fusion's negated Near Window Edge condition tests the complete rendered image.
+function credits_sprite_canvas_bounds(_sprite, _x, _y, _xscale, _yscale, _angle) {
     var _left = -sprite_get_xoffset(_sprite) * _xscale;
     var _top_offset = -sprite_get_yoffset(_sprite) * _yscale;
     var _right = _left + sprite_get_width(_sprite) * _xscale;
@@ -54,8 +52,18 @@ function credits_sprite_inside_view(_sprite, _x, _y, _xscale, _yscale, _angle, _
     var _max_x = max(_left * _cos, _right * _cos) + max(_top_offset * _sin, _bottom * _sin);
     var _min_y = min(-_left * _sin, -_right * _sin) + min(_top_offset * _cos, _bottom * _cos);
     var _max_y = max(-_left * _sin, -_right * _sin) + max(_top_offset * _cos, _bottom * _cos);
-    return _x + _min_x > -_margin && _x + _max_x < room_width + _margin
-        && _y + _min_y > _top - _margin && _y + _max_y < _top + 480 + _margin;
+    return { left: _x + _min_x, right: _x + _max_x, top: _y + _min_y, bottom: _y + _max_y };
+}
+
+function credits_bounds_inside_view(_bounds, _top, _margin) {
+    // Fusion's negated Near Window Edge condition tests the complete rendered image.
+    return _bounds.left > -_margin && _bounds.right < room_width + _margin
+        && _bounds.top > _top - _margin && _bounds.bottom < _top + 480 + _margin;
+}
+
+function credits_bounds_visible(_bounds, _top, _bottom) {
+    return _bounds.right > 0 && _bounds.left < room_width
+        && _bounds.bottom > _top && _bounds.top < _bottom;
 }
 
 function credits_wrap_left(_start, _age, _speed, _left, _right) {
@@ -111,33 +119,59 @@ function credits_effect_spawn(_sprite, _x, _y, _dx, _dy, _ttl, _angular_speed = 
         alpha: 1,
         additive: false,
         gravity: 0,
-        window_margin: -1
+        window_margin: -1,
+        first_visible_step: 0,
+        left_limit: -320
     };
     array_push(effects, _effect);
     return _effect;
 }
 
+function credits_effect_bounds(_effect) {
+    return credits_sprite_canvas_bounds(_effect.sprite, floor(_effect.x), floor(_effect.y),
+        _effect.scale, _effect.scale, _effect.angle);
+}
+
 function credits_effect_step(_top) {
     for (var _i = array_length(effects) - 1; _i >= 0; --_i) {
         var _effect = effects[_i];
+        if (_effect.sprite == spr_credits_actor_kitty_heart_spark) {
+            // G887 advances these after all newly created sparks have been selected.
+            continue;
+        }
         // G1003 culls Skeleton King shards before G1007 updates the positions.
         if (_effect.window_margin >= 0 && (_effect.x < 0
-            || !credits_sprite_inside_view(_effect.sprite, _effect.x, _effect.y,
-                _effect.scale, _effect.scale, _effect.angle, _top, _effect.window_margin))) {
+            || !credits_bounds_inside_view(credits_effect_bounds(_effect), _top, _effect.window_margin))) {
             array_delete(effects, _i, 1);
             continue;
         }
         ++_effect.steps;
         _effect.x += _effect.dx;
         _effect.y += _effect.dy;
-        _effect.dy += _effect.gravity * _effect.steps;
+        _effect.dy += _effect.gravity * (_effect.steps - 1);
         _effect.angle += _effect.spin;
+        if (_effect.steps >= _effect.ttl || floor(_effect.x) < _effect.left_limit || _effect.x > 960) {
+            array_delete(effects, _i, 1);
+        }
+    }
+}
+
+function credits_kitty_hearts_step() {
+    for (var _i = array_length(effects) - 1; _i >= 0; --_i) {
+        var _effect = effects[_i];
+        // G885–887 cull the entire image before applying the spark's scripted position update.
+        if (!credits_bounds_visible(credits_effect_bounds(_effect), 0, room_height)) {
+            array_delete(effects, _i, 1);
+            continue;
+        }
         if (_effect.sprite == spr_credits_actor_kitty_heart_spark) {
             _effect.angle += 5 + irandom(14);
             _effect.scale *= 0.98;
-        }
-        if (_effect.steps >= _effect.ttl || _effect.x < -320 || _effect.x > 960) {
-            array_delete(effects, _i, 1);
+            _effect.x = floor(_effect.x + _effect.dx);
+            _effect.y = floor(_effect.y + _effect.dy);
+            if (++_effect.steps >= _effect.ttl) {
+                array_delete(effects, _i, 1);
+            }
         }
     }
 }
@@ -145,7 +179,8 @@ function credits_effect_step(_top) {
 function credits_effect_draw(_top) {
     for (var _i = 0; _i < array_length(effects); ++_i) {
         var _effect = effects[_i];
-        if (!credits_near_view(_effect.y, _top, 64)) {
+        if (_effect.steps < _effect.first_visible_step
+            || !credits_bounds_visible(credits_effect_bounds(_effect), _top, _top + 480)) {
             continue;
         }
         var _frame = floor(_effect.steps * sprite_get_speed(_effect.sprite) / 50);

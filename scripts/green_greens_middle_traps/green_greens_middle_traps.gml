@@ -6,12 +6,14 @@ function green_greens_middle_traps_setup() {
         {
             actor: _emitter,
             zone: _emitter.laser_trigger_zone, beam_x: _emitter.laser_origin_x, beam_y: _emitter.laser_origin_y,
-            reflector: false, triggered: false, beam_age: -1, beam_hitbox: noone, vx: -1, vsp: 0
+            reflector: false, triggered: false, animation_ticks: 0,
+            beam_age: -1, beam_hitbox: noone, vx: -1, vsp: 0
         },
         {
             actor: _reflector,
             zone: _reflector.laser_trigger_zone, beam_x: _reflector.laser_origin_x, beam_y: _reflector.laser_origin_y,
-            reflector: true, triggered: false, beam_age: -1, beam_hitbox: noone, vx: 0, vsp: 0
+            reflector: true, triggered: false, animation_ticks: 0,
+            beam_age: -1, beam_hitbox: noone, vx: 0, vsp: 0
         }
     ];
     green_middle_cloud_spawn = [];
@@ -42,11 +44,9 @@ function green_greens_middle_traps_setup() {
     green_middle_stretch_steps = 11;
     green_middle_charge_steps = green_middle_stretch_steps + 17;
     green_middle_fire_steps = 30;
-    green_middle_steps = 0;
 }
 
 function green_greens_middle_traps_step(_player) {
-    ++green_middle_steps;
     green_greens_middle_step_springs(_player);
     for (var _i = 0; _i < array_length(green_middle_clouds); ++_i) {
         green_greens_middle_step_cloud(green_middle_clouds[_i], _player);
@@ -58,6 +58,11 @@ function green_greens_middle_traps_step(_player) {
             continue;
         }
         green_greens_middle_move_cloud(_cloud);
+        // G737 rerolls a stationary fragment after its movement for the step.
+        if (_cloud.vx == 0) {
+            _cloud.vx = irandom(4) - 3;
+        }
+        _cloud.actor.image_index = ((++_cloud.animation_ticks * 20 - 1) div 100) mod 2;
         if (_cloud.actor.x < -64 || _cloud.actor.y > 2000) {
             instance_destroy(_cloud.actor);
         }
@@ -118,15 +123,14 @@ function green_greens_middle_step_cloud(_cloud, _player) {
     if (!_cloud.triggered && green_greens_player_in_zone(_player, _cloud.zone) && !_player.input_locked) {
         _cloud.triggered = true;
         _cloud.beam_age = 0;
+        _cloud.animation_ticks = 0;
     }
 
-    if (_cloud.beam_age >= 0) {
-        // The cloud alternates its firing pose at Fusion speed 80 while the beam exists.
-        var _firing_frame = floor(((_cloud.beam_age + 1) * 80 - 1) / 100);
-        _actor.image_index = (_firing_frame mod 2) * 2;
-    } else {
-        _actor.image_index = (green_middle_steps div 5) mod 2;
-    }
+    // G723 restores the emitter's idle clip. G749 turns the reflector while its forced clip continues.
+    var _firing = _cloud.beam_age >= 0 || (_cloud.reflector && _cloud.triggered);
+    var _speed = _firing ? 80 : 20;
+    var _frame = ((++_cloud.animation_ticks * _speed - 1) div 100) mod 2;
+    _actor.image_index = _firing ? _frame * 2 : _frame;
     if (_cloud.triggered && _cloud.beam_age < 0 && !_cloud.reflector) {
         green_greens_middle_move_cloud(_cloud);
     }
@@ -151,6 +155,9 @@ function green_greens_middle_step_laser(_cloud) {
             _cloud.beam_hitbox = noone;
         } else {
             _cloud.beam_hitbox.image_index = (_age - green_middle_charge_steps) mod 3;
+            // G728 reads the same counter that G1028 updates with Kracko's remaining HP.
+            var _kracko_hp = instance_exists(kracko_boss) ? kracko_boss.hit_points : (kracko_started ? 0 : 20);
+            kracko_shake_steps = max(0, _kracko_hp - 10);
         }
     }
     if (_age >= _fire_end + sprite_get_number(spr_hello_kitty_laser_fire)) {
@@ -158,6 +165,8 @@ function green_greens_middle_step_laser(_cloud) {
         if (_cloud.reflector && instance_exists(_cloud.actor)) {
             _cloud.actor.image_angle = 180;
             _cloud.actor.y -= 16;
+        } else {
+            _cloud.animation_ticks = 0;
         }
     }
 }
@@ -176,26 +185,23 @@ function green_greens_middle_break_barrier() {
 function green_greens_middle_move_cloud(_cloud) {
     var _actor = _cloud.actor;
     _actor.x += _cloud.vx;
-    _actor.y += _cloud.vsp;
+    _actor.y = floor(_actor.y + _cloud.vsp);
     _cloud.vsp += 0.2;
     var _terrain_hit = false;
     with (_actor) {
         _terrain_hit = terrain_meeting(x, y);
     }
-    if (_terrain_hit && _cloud.vsp > 0) {
-        _actor.y -= _cloud.vsp - 0.2;
+    if (_terrain_hit) {
         _cloud.vsp = -2 - irandom(4);
     }
-    _actor.image_index = (green_middle_steps div 5) mod 2;
 }
 
 function green_greens_middle_split_cloud() {
-    static _speeds = [-3, -2, -1, 1];
     repeat (7) {
         var _actor = instance_create_layer(3861 - irandom(49), 1340, "Gameplay", obj_hazard, {
             sprite_index: spr_green_greens_middle_cloud, image_speed: 0
         });
-        array_push(green_middle_cloud_spawn, { actor: _actor, vx: _speeds[irandom(3)], vsp: 0 });
+        array_push(green_middle_cloud_spawn, { actor: _actor, vx: 0, vsp: 0, animation_ticks: 0 });
     }
 }
 

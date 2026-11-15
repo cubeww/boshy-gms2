@@ -2,6 +2,7 @@ function solgryn_late_init() {
     late_floor = noone;
     late_laser = noone;
     late_salvo_clock = 0;
+    late_floor_burst_us = 1000000;
     solgryn_history_alpha = 0;
     solgryn_late_shield_init();
     solgryn_late_cameos_init();
@@ -65,7 +66,8 @@ function solgryn_late_laser_step(_player) {
             // G853 moves the hotspot one pixel left and closes 30% of the vertical distance.
             --x;
             y = floor(y + (_player_y - y) * 0.3);
-            var _frame = floor(laser_steps * 0.25);
+            // Fusion advances the frame when the accumulator exceeds 100.
+            var _frame = (laser_steps * 25 - 1) div 100;
             image_index = _frame < 18 ? _frame : 11 + (_frame - 11) mod 7;
             if (laser_hits >= 60) {
                 solgryn_early_teleport_burst(x, y);
@@ -146,6 +148,7 @@ function solgryn_late_final_step(_player, _age) {
         case 16050:
             audio_play_sound(snd_solgryn_late_roar, 1, false);
             solgryn_shake(2);
+            solgryn_flash(25);
             solgryn_history_alpha = 0.35;
             break;
         case 15780:
@@ -159,7 +162,8 @@ function solgryn_late_final_step(_player, _age) {
             }
             break;
         case 15950:
-            // The first scatter is still in flight while the second set appears.
+            // G867 starts the first scatter's Disappearing animation as the second set appears.
+            solgryn_late_clear_shots();
             solgryn_late_scatter(100);
             break;
         case 16310:
@@ -182,7 +186,10 @@ function solgryn_late_final_step(_player, _age) {
         repeat (_count) {
             solgryn_early_explosion(4 + irandom(629), 2891, "Flame Floor");
         }
-        if (scene_steps mod 50 == 0) {
+        // G844 counts elapsed time only during the fire eruption.
+        late_floor_burst_us -= delta_time;
+        if (late_floor_burst_us <= 0) {
+            late_floor_burst_us += 1000000;
             solgryn_late_burst(30 + irandom(609), 2858);
         }
         if (_age >= 15250) {
@@ -203,7 +210,7 @@ function solgryn_late_final_step(_player, _age) {
 
     if ((_age > 15330 && _age < 15500 && late_salvo_clock > 60)
         || (_age > 15650 && _age < 16310)) {
-        var _angle = (scene_steps * 20) div 5;
+        var _angle = game_controller.frame_elapsed_us div 5000;
         target_x = 555 + dcos(_angle) * 30;
         target_y = 2650 + dsin(_angle) * 150;
     }

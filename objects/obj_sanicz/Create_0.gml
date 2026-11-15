@@ -14,7 +14,6 @@ show_boss_timer = game_has_item("Timer");
 fight_age = -50;
 fight_phase_two = false;
 scene_steps = 0;
-attempt_steps = 0;
 motion_x = 0;
 motion_y = 0;
 chase_x = 0;
@@ -113,15 +112,19 @@ take_player_shot = function(_bullet) {
         audio_play_sound(snd_green_greens_middle_reflect, 1, false);
         return false;
     }
+    take_hit(1);
+    return true;
+};
+
+take_hit = function(_damage) {
     if (hit_flash_age == 0) {
         hit_flash_age = 1;
     }
     audio_play_sound(snd_mario_bump, 1, false);
-    hit_points = max(0, hit_points - 1);
+    hit_points = max(0, hit_points - _damage);
     if (hit_points == 0) {
-        sanicz_victory_begin(attempt_steps);
+        sanicz_victory_begin(game_controller.frame_seconds);
     }
-    return true;
 };
 
 sanicz_draw_hud = function(_viewport) {
@@ -137,4 +140,6 @@ sanicz_draw_hud = function(_viewport) {
 
 sanicz_attacks_setup();
 sanicz_victory_setup();
-game_controller.start_stage_music(snd_sanicz_intro_music, false, false, 48000);
+if (game_selected_cd() == 0) {
+    game_controller.start_stage_music(snd_sanicz_intro_music, false, false, 48000);
+}

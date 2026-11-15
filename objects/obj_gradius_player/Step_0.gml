@@ -2,10 +2,10 @@
 
 var _keys = global.settings.keys;
 if (!dead) {
-    var _up = keyboard_check(vk_up);
-    var _down = keyboard_check(vk_down);
-    var _left = keyboard_check(_keys.left);
-    var _right = keyboard_check(_keys.right);
+    var _up = keyboard_check(_keys.up);
+    var _down = keyboard_check(_keys.down);
+    var _left = keyboard_check(game_horizontal_key(_keys, false));
+    var _right = keyboard_check(game_horizontal_key(_keys, true));
 
     // Groups 862–868 update thrust in input order and round each vertical step.
     vertical_speed += (_down - _up) * flight_speed;

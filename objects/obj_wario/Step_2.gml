@@ -2,9 +2,8 @@
 var _player = instance_find(obj_player, 0);
 if (_player == noone) {
     game_controller.fade_stage_music();
-} else {
-    update_view(_player);
 }
+update_view(_player);
 
 with (obj_wario_title_sign) {
     // Groups 682–683 reveal the entrance ice and drop the title into view.

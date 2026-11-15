@@ -1,0 +1,10 @@
+{
+  "$GMScript":"v1",
+  "%Name":"chest_view",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"chest_view",
+  "parent":{"name":"Rendering","path":"folders/Shared/Rendering.yy",},
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}

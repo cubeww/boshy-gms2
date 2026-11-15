@@ -26,14 +26,7 @@ function teleporter_rush_begin(_key, _room, _x, _y) {
 }
 
 function teleporter_rush_step() {
-    if (!teleporter_rush_active()) {
-        return;
-    }
-    if (!variable_instance_exists(id, "boss_rush_clock")) {
-        boss_rush_clock = 0;
-    }
-    if (++boss_rush_clock == 50) {
-        boss_rush_clock = 0;
+    if (teleporter_rush_active() && frame_second_tick) {
         var _progress = game_current_progress();
         ++_progress.boss_rush_seconds;
         global.profile.dirty = true;

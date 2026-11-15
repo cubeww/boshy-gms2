@@ -1,30 +1,32 @@
-++stage_steps;
-
 var _player = instance_find(obj_player, 0);
 prehistorik_pickups_step(_player);
+var _previous_page = page_left;
+if (_player != noone && !_player.dead) {
+    page_left = clamp(floor(_player.x / 640) * 640, 0, room_width - 640);
+}
+var _page_change = page_left - _previous_page;
+with (obj_prize_room_background) {
+    if (scroll_speed != 0) {
+        // G980–988 use the pending page edges before Fusion scrolls the layer.
+        x -= scroll_speed;
+        if (x <= _page_change - wrap_left_margin) {
+            x += scroll_period;
+        }
+        if (x > _page_change + 640 + 100) {
+            x -= scroll_period;
+        }
+    }
+}
 if (_player == noone || _player.dead) {
+    chest_view_update(game_controller, noone, -1);
     game_controller.fade_stage_music();
     exit;
 }
 
-page_left = clamp(floor(_player.x / 640) * 640, 0, room_width - 640);
-if (prehistorik_pickup_slot >= 0) {
-    // The source zooms toward the character chest during the reveal.
-    var _age = min(prehistorik_pickup_age, 200);
-    view_width = lerp(view_width, 640 - _age * 2, 0.2);
-    view_center_x = lerp(view_center_x, _player.x, 0.2);
-    view_center_y = lerp(view_center_y, _player.y + 5, 0.2);
-} else {
-    view_width = 640;
-    view_center_x = page_left + 320;
-    view_center_y = 240;
-}
-var _width = round(view_width / 4) * 4;
-var _height = _width * 3 / 4;
-var _camera = view_camera[0];
-camera_set_view_size(_camera, _width, _height);
-camera_set_view_pos(_camera, clamp(round(view_center_x - _width / 2), 0, room_width - _width),
-    clamp(round(view_center_y - _height / 2), 0, room_height - _height));
+camera_set_view_size(view_camera[0], 640, 480);
+camera_set_view_pos(view_camera[0], page_left, 0);
+var _pickup_age = prehistorik_pickup_slot >= 0 ? prehistorik_pickup_age : -1;
+chest_view_update(game_controller, _player, _pickup_age);
 
 var _portal = inst_prize_room_hub_portal;
 if (portal_steps >= 0) {

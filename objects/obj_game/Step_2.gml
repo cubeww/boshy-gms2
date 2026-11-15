@@ -1,6 +1,9 @@
 if (!gameplay_room) {
     exit;
 }
+if (game_slightly_enabled()) {
+    ear_rape_spike_step();
+}
 if (teleporter_arrival_age >= 0) {
     var _frame = floor(++teleporter_arrival_age * 0.6);
     if (_frame >= sprite_get_number(spr_tutorial_portal_transition)) {
@@ -34,7 +37,12 @@ if (inbound_portal != noone) {
     }
     teleporter_apply_exit_mosaic(id, inbound_portal_age);
     if (inbound_portal_age >= 80) {
-        game_travel_by_teleporter(rm_teleporter, 320, 240);
+        if (variable_instance_exists(inbound_portal, "destination_room")) {
+            game_travel_by_teleporter(inbound_portal.destination_room,
+                inbound_portal.destination_x, inbound_portal.destination_y);
+        } else {
+            game_travel_by_teleporter(rm_teleporter, 320, 240);
+        }
     }
     exit;
 }
@@ -43,15 +51,14 @@ if (_player == noone) {
 }
 
 with (obj_tutorial_portal) {
-    if (!variable_instance_exists(id, "hub_destination") || !hub_destination) {
+    var _has_destination = variable_instance_exists(id, "destination_room");
+    var _leads_to_hub = variable_instance_exists(id, "hub_destination") && hub_destination;
+    if (!_has_destination && !_leads_to_hub) {
         continue;
     }
-    var _touching = _player.boshy_mask_meeting(id);
-    if (!variable_instance_exists(id, "hub_touching")) {
-        hub_touching = false;
-    }
-    var _entered = _touching && !hub_touching;
-    hub_touching = _touching;
+    var _was_touching = variable_instance_exists(id, "portal_touching") && portal_touching;
+    portal_touching = _player.boshy_mask_meeting(id);
+    var _entered = portal_touching && !_was_touching;
     if (_entered && !_player.input_locked) {
         other.inbound_portal = id;
         other.inbound_portal_age = 0;

@@ -1,3 +1,8 @@
+if (!is_undefined(custom_editor)) {
+    custom_character_editor_draw();
+    exit;
+}
+
 draw_sprite_part_ext(spr_options_background, 0, 144, 96, 640, 480, 0, 0, 1, 1, c_white, 94 / 255);
 draw_sprite_ext(spr_dresser_spotlight, 0, 320, 214, 1, 1, 0, c_white, spotlight_alpha);
 
@@ -18,7 +23,7 @@ for (var _i = 0; _i < 9; ++_i) {
 draw_sprite(spr_dresser_platform_base, 0, 294, 231);
 
 var _idle = preview_character.poses[PlayerPose.Idle];
-draw_sprite(preview_character.sprite_right, _idle.frames[floor(preview_frame)], 320, 215);
+game_character_draw(preview_character, PlayerPose.Idle, _idle.frames[floor(preview_frame)], 1, 320, 215);
 
 draw_sprite_ext(spr_dresser_selection, 0, round(selection_x), round(selection_y), 1, 1, selection_angle, c_white, 1);
 for (var _i = 0; _i < array_length(portraits); ++_i) {
@@ -48,12 +53,18 @@ draw_rectangle(0, 398, 640, 415, false);
 draw_sprite(spr_dresser_change, 0, 250, 396);
 draw_sprite(spr_dresser_title, 0, 320, 35);
 
-var _name = portraits[selected_slot].entry.name;
-var _name_x = (640 - string_length(_name) * 20) div 2;
-for (var _i = 1; _i <= string_length(_name); ++_i) {
-    var _glyph = ord(string_char_at(_name, _i)) - 32;
-    draw_sprite_part(spr_dresser_name_font, 0, (_glyph mod 32) * 20, (_glyph div 32) * 24, 20, 24,
-        _name_x + (_i - 1) * 20, 147);
+if (custom_preview_name == "") {
+    var _name = portraits[selected_slot].entry.name;
+    var _name_x = (640 - string_length(_name) * 20) div 2;
+    for (var _i = 1; _i <= string_length(_name); ++_i) {
+        var _glyph = ord(string_char_at(_name, _i)) - 32;
+        draw_sprite_part(spr_dresser_name_font, 0, (_glyph mod 32) * 20, (_glyph div 32) * 24, 20, 24,
+            _name_x + (_i - 1) * 20, 147);
+    }
+} else {
+    draw_set_halign(fa_center);
+    draw_text(320, 147, custom_preview_name);
+    draw_set_halign(fa_left);
 }
 
 if (notice_steps > 0) {

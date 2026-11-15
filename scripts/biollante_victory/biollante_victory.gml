@@ -11,7 +11,7 @@ function biollante_victory_setup() {
     victory_clear_trophy_pending = false;
 }
 
-function biollante_victory_begin(_player, _attempt_steps) {
+function biollante_victory_begin(_player, _seconds) {
     if (victory_age >= 0) {
         return;
     }
@@ -39,7 +39,6 @@ function biollante_victory_begin(_player, _attempt_steps) {
     }
 
     // The record and speed award use the elapsed seconds at the last hit.
-    var _seconds = _attempt_steps div 50;
     var _progress = game_current_progress();
     if (_seconds < _progress.biollante_best_time) {
         _progress.biollante_best_time = _seconds;

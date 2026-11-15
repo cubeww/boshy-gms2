@@ -38,10 +38,36 @@ hovered_slot = -1;
 notice = "";
 notice_steps = 0;
 elapsed_steps = 0;
+custom_editor = undefined;
+custom_preview_name = "";
+custom_preview_data = undefined;
+
+set_custom_preview = function(_name) {
+    var _custom = custom_character_load(_name, false);
+    var _character = custom_character_definition(_custom);
+    if (is_undefined(_character)) {
+        custom_character_unload(_custom);
+        return false;
+    }
+    custom_character_unload(custom_preview_data);
+    custom_preview_data = _custom;
+    custom_preview_name = _name;
+    preview_character = _character;
+    preview_frame = 0;
+    spotlight_alpha = 0;
+    notice_steps = 0;
+    selection_x = 120;
+    selection_y = 208;
+    return true;
+};
+
+if (global.profile.character_id == CHARACTER_CUSTOM) {
+    set_custom_preview(global.profile.custom_character);
+}
 
 fire_positions = [0, 32, 80, 128, 176, 240, 320, 368, 432, 496, 544, -80, 240, 384, 480];
 fire_rates = [];
 for (var _i = 0; _i < array_length(fire_positions); ++_i) {
     array_push(fire_rates, irandom_range(25, 64) / 100);
 }
-music_instance = audio_play_sound(snd_options_music, 0, true, global.settings.music_volume / 100);
+game_controller.start_stage_music(snd_options_music, true, false, 44100);

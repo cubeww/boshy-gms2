@@ -1,6 +1,6 @@
 function solgryn_early_teleport_init() {
     teleport_cycle = 0;
-    teleport_sound_steps = 0;
+    teleport_sound_timer_us = 100000;
     teleport_target_x = 320;
     teleport_target_y = 150;
     teleport_wave_amplitude = 0;
@@ -39,7 +39,11 @@ function solgryn_early_teleport_step(_age) {
         image_angle = dsin(_age * 8) * 10;
         if (_age >= 3350) {
             // In G758 the timer is tested before the requirements on alterable F.
-            teleport_sound_steps = (teleport_sound_steps + 1) mod 5;
+            teleport_sound_timer_us -= delta_time;
+            var _play_shot_sound = teleport_sound_timer_us <= 0;
+            if (_play_shot_sound) {
+                teleport_sound_timer_us += 100000;
+            }
             if (teleport_cycle == 5) {
                 visible = false;
             } else if (teleport_cycle == 15) {
@@ -61,7 +65,7 @@ function solgryn_early_teleport_step(_age) {
             if (teleport_cycle >= 60 && teleport_cycle <= 90) {
                 solgryn_early_teleport_reveal(teleport_cycle - 59);
                 solgryn_early_shot(x, y, (_age * 25) mod 360, 6);
-                if (teleport_sound_steps == 0) {
+                if (_play_shot_sound) {
                     audio_play_sound(snd_solgryn_early_shoot, 1, false);
                 }
             }

@@ -13,8 +13,8 @@ show_boss_timer = game_has_item("Timer");
 
 fight_age = 140;
 scene_steps = 0;
-attempt_steps = 0;
-timer_reset_second = -1;
+timer_reset_second = 0;
+water_splash_wait_us = 50000;
 hud_opacity = 0;
 enemy_level_up = false;
 death_age = 0;
@@ -40,17 +40,7 @@ set_screen_blur = function(_strength) {
 
 reset_boss_timer = function() {
     // Reset the displayed seconds while retaining the room-wide one-second pulse.
-    timer_reset_second = scene_steps div 50;
-    attempt_steps = 0;
-};
-
-start_battle_music = function() {
-    var _cd = ninja_gaiden_selected_cd();
-    if (is_undefined(_cd)) {
-        game_controller.start_stage_music(snd_ninja_gaiden_boss_exit_music);
-    } else {
-        game_controller.start_stage_music(_cd[2], true, true, _cd[3]);
-    }
+    timer_reset_second = game_controller.frame_seconds;
 };
 
 take_player_shot = function(_shot) {

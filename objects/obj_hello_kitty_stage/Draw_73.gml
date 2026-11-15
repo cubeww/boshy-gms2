@@ -16,7 +16,8 @@ if (instance_exists(boss) && boss.hit_points > 0) {
         if (show_boss_health) {
             _status += "\n";
         }
-        _status += string(boss.attempt_steps div 50) + " seconds";
+        var _seconds = boss.attempt_start_second < 0 ? 0 : game_controller.frame_seconds - boss.attempt_start_second;
+        _status += string(_seconds) + " seconds";
     }
     if (_status != "") {
         draw_boshy_text(_status, _left + 316, _top + 12);

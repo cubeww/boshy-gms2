@@ -13,9 +13,8 @@ if (room == rm_milon) {
 
 if (_player == noone) {
     game_controller.fade_stage_music();
-} else {
-    update_view(_player);
 }
+update_view(_player);
 
 if (room == rm_milon) {
     update_rotation(_player);

@@ -4,7 +4,7 @@ function mega_man_pair_spawn() {
     bomb_fighter = mega_man_spawn_actor(MegaManActor.BombMan, spr_mega_man_bomb_man, 323, 37, 25);
     metal_fighter.spinner_steps = 0;
     bomb_fighter.bomb_flag = false;
-    bomb_fighter.bomb_flag_wait = 750;
+    bomb_fighter.bomb_flag_wait_us = 750000;
     bomb_fighter.bomb_animation_ticks = 0;
     bomb_fighter.bomb_touching_backdrop = false;
     bomb_fighter.image_speed = 0;
@@ -12,7 +12,7 @@ function mega_man_pair_spawn() {
 
 function mega_man_metal_step(_controller, _player) {
     // G708 follows the room timer even while Mega Man's phase counter is held.
-    var _timer = _controller.scene_steps * 20;
+    var _timer = _controller.game_controller.frame_elapsed_us div 1000;
     y = floor(268 + dsin(_timer div 8) * 50);
     x = floor(330 + dcos(_timer div 10) * 290);
     if (++enemy_cooldown >= 110) {
@@ -37,7 +37,7 @@ function mega_man_bomb_step(_controller, _player) {
     bomb_touching_backdrop = _touching_backdrop;
     y = floor(y + enemy_vy);
     enemy_vy += 0.5;
-    x = floor(300 + dsin((_controller.scene_steps * 20) div 3) * 32);
+    x = floor(300 + dsin(_controller.game_controller.frame_elapsed_us div 3000) * 32);
 
     // Each direction has the same animation clock, with a one-play clip on the left.
     if (enemy_facing > 0 || image_index < image_number - 1) {
@@ -61,9 +61,9 @@ function mega_man_bomb_step(_controller, _player) {
         enemy_cooldown = 0;
     }
 
-    bomb_flag_wait -= 20;
-    if (bomb_flag_wait <= 0) {
+    bomb_flag_wait_us -= delta_time;
+    if (bomb_flag_wait_us <= 0) {
         bomb_flag = !bomb_flag;
-        bomb_flag_wait += 750;
+        bomb_flag_wait_us += 750000;
     }
 }

@@ -1,4 +1,4 @@
-global.run.boss_entry_steps += 1;
+global.run.boss_entry_seconds += game_controller.frame_second_tick;
 
 if (trophy_steps >= 0 && ++trophy_steps >= 226) {
     trophy_steps = -1;
@@ -8,6 +8,7 @@ var _player = instance_find(obj_player, 0);
 var _pickup_active = prehistorik_pickup_slot >= 0;
 prehistorik_pickups_step(_player);
 if (_player == noone) {
+    update_view(noone);
     game_controller.fade_stage_music();
     exit;
 }
@@ -17,6 +18,7 @@ if (!_pickup_active && prehistorik_pickup_slot >= 0) {
 }
 
 if (portal_steps >= 0) {
+    chest_view_update(game_controller, noone, -1);
     var _duration = ceil(sprite_get_number(spr_tutorial_portal_transition) / 0.6);
     if (instance_exists(inst_vvvvvv_boss_portal)) {
         _player.x = inst_vvvvvv_boss_portal.x + 115;

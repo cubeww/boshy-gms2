@@ -17,6 +17,7 @@ character = game_character_definition(global.profile.character_id);
 if (is_undefined(character)) {
     character = boshy_character();
 }
+player_spawn_costume_effect(true);
 
 options = [];
 

@@ -99,7 +99,7 @@ function bomberman_draw_pose() {
     }
 }
 
-function bomberman_pose_trail_step(_scene_steps) {
+function bomberman_pose_trail_step() {
     if (visible) {
         // G1264 copies the animation and frame onto Ganon 2, at its own direction 0.
         // Its animation table has 19 entries, so the last boss pose uses its pose 18.
@@ -109,7 +109,7 @@ function bomberman_pose_trail_step(_scene_steps) {
             image_index: min(floor(image_index), array_length(_clip.points) - 1),
             image_xscale: image_xscale,
             image_yscale: image_xscale,
-            image_angle: floor(dcos((_scene_steps * 20) div 3) * 10),
+            image_angle: floor(dcos(game_controller.frame_elapsed_us div 3000) * 10),
             image_speed: 0,
             trail_age: 0
         });

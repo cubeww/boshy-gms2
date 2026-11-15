@@ -2,7 +2,7 @@ function missingno_victory_setup() {
     victory_age = -1;
     victory_trophy_age = -1;
     victory_trophy_text = "";
-    victory_clear_pending = false;
+    victory_clear_at_us = -1;
     victory_speed_pending = false;
     victory_new_record = false;
     victory_audio = [];
@@ -18,7 +18,7 @@ function missingno_victory_cleanup() {
     }
 }
 
-function missingno_victory_begin(_player, _attempt_steps) {
+function missingno_victory_begin(_player, _seconds) {
     // G710–713 end the attack cycle when HP reaches zero.
     victory_age = 0;
     missingno_attacks_clear();
@@ -31,14 +31,15 @@ function missingno_victory_begin(_player, _attempt_steps) {
     }
     set_read_sign("Wild MISSINGO. fainted!");
 
-    var _seconds = _attempt_steps div 50;
     var _progress = game_current_progress();
     if (_seconds < _progress.missingno_best_time) {
         _progress.missingno_best_time = _seconds;
         global.profile.dirty = true;
         victory_new_record = true;
     }
-    victory_clear_pending = game_trophy_unlock("Missingno");
+    if (game_trophy_unlock("Missingno")) {
+        victory_clear_at_us = game_controller.frame_elapsed_us + 2000000;
+    }
     victory_speed_pending = _seconds < 64 && game_trophy_unlock("MissingnoSpeed");
     if (victory_new_record) {
         game_profile_save();
@@ -70,8 +71,9 @@ function missingno_victory_step() {
             missingno_victory_announce("MISSINGNO\nSPEEDRUN!");
         }
     }
-    if (victory_clear_pending && scene_steps mod 100 == 0) {
-        victory_clear_pending = false;
+    // G602 starts its two-second timer once the clear is pending.
+    if (victory_clear_at_us >= 0 && game_controller.frame_elapsed_us >= victory_clear_at_us) {
+        victory_clear_at_us = -1;
         missingno_victory_announce("CHECK YOUR 6TH\nITEM");
     }
 
@@ -109,7 +111,7 @@ function missingno_victory_step() {
                 game_controller.stage_music_instance = -1;
             }
             if (!teleporter_rush_exit()) {
-                global.run.solgryn_route_steps = attempt_steps;
+                global.run.solgryn_route_seconds = game_controller.frame_seconds - timer_reset_second;
                 room_goto(rm_desert);
             }
             break;

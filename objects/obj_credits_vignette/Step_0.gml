@@ -7,13 +7,17 @@ var _top = _credits.page_top;
 var _player = instance_find(obj_player, 0);
 var _player_y = _player != noone ? _player.y : _top + 340;
 var _timer = _age * 20;
-var _near = credits_near_view(home_y, _top, 280);
 
 credits_effect_step(_top);
 // Integer hundredths keep the wrapped frame nonnegative at the end of a loop.
 var _animation_step = round(animation_rate * 100);
+var _animation_finished = false;
 if (_animation_step > 0 && image_number > 0) {
-    animation_ticks = (animation_ticks + _animation_step) mod (image_number * 100);
+    animation_ticks += _animation_step;
+    _animation_finished = animation_ticks >= image_number * 100;
+    if (_animation_finished) {
+        animation_ticks -= (image_number - animation_loop_start) * 100;
+    }
     image_index = animation_ticks div 100;
 }
 
@@ -27,22 +31,28 @@ switch (motion) {
     case CreditsMotion.Kitty:
         // G874–888 animate the balloon and leave a trail of smaller hearts behind each shot.
         y = floor(3063 + dsin(_timer / 6) * 150);
-        if (_near && _age mod 50 == 0) {
-            var _angle = irandom_range(17, 19) * 11.25;
-            credits_effect_spawn(spr_credits_actor_kitty_heart, x - 4 * image_xscale,
-                y - image_yscale, lengthdir_x(12.5, _angle), lengthdir_y(12.5, _angle), 60);
+        if (_age mod 50 == 0) {
+            // Fusion's bullet movement uses a fixed-point direction table.
+            var _velocities = [[-251, 49], [-236, 97], [-212, 142]];
+            var _direction = irandom(2);
+            var _velocity = _velocities[_direction];
+            var _shot = credits_effect_spawn(spr_credits_actor_kitty_heart, x - 4 * image_xscale,
+                y - image_yscale, _velocity[0] * 100 / 2048, _velocity[1] * 100 / 2048, 60);
+            _shot.first_visible_step = 1;
+            _shot.heart_direction = (17 + _direction) * 11.25;
         }
         if (_age mod 5 == 0) {
             var _count = array_length(effects);
             for (var _i = 0; _i < _count; ++_i) {
                 var _heart = effects[_i];
-                if (_heart.sprite == spr_credits_actor_kitty_heart && _heart.x >= -15) {
-                    var _spark_angle = 180 - point_direction(0, 0, _heart.dx, _heart.dy) + irandom(89) - irandom(89);
+                if (_heart.sprite == spr_credits_actor_kitty_heart) {
+                    var _spark_angle = 180 - _heart.heart_direction + irandom(89) - irandom(89);
                     credits_effect_spawn(spr_credits_actor_kitty_heart_spark,
                         floor(_heart.x), floor(_heart.y), lengthdir_x(2, _spark_angle), lengthdir_y(2, _spark_angle), 40);
                 }
             }
         }
+        credits_kitty_hearts_step();
         break;
 
     case CreditsMotion.KittyPlatform:
@@ -95,12 +105,11 @@ switch (motion) {
             image_index = 0;
             animation_ticks = 0;
             animation_rate = 0.35;
-            if (_near) {
-                // G895 shoots from animation 12's left-facing action point.
-                credits_effect_spawn(spr_credits_actor_ryu_hadoken, x - 49, y - 6, -6.25, 0, 100);
-            }
-        } else if (sprite_index == spr_credits_actor_ryu_attack
-            && animation_ticks + _animation_step >= image_number * 100) {
+            // G895 shoots from animation 12's left-facing action point.
+            var _shot = credits_effect_spawn(spr_credits_actor_ryu_hadoken, x - 49, y - 6, -6.25, 0, 100);
+            _shot.first_visible_step = 1;
+            _shot.left_limit = -64;
+        } else if (sprite_index == spr_credits_actor_ryu_attack && _animation_finished) {
             sprite_index = spr_credits_actor_ryu;
             image_index = 0;
             animation_ticks = 0;
@@ -133,7 +142,8 @@ switch (motion) {
         break;
 
     case CreditsMotion.ShangCloud:
-        // G1024–1029 wrap at equality before applying the current movement.
+    case CreditsMotion.DesertMist:
+        // G1024–1029 and G1089–1091 wrap at equality before applying the current movement.
         x = (x <= wrap_left ? wrap_right : x) + motion_speed;
         break;
 
@@ -167,7 +177,7 @@ switch (motion) {
         break;
 
     case CreditsMotion.GradiusShip:
-        if (_player_y >= 10240 && _player_y <= 10361) {
+        if (_player_y >= 10240 && _player_y < 10361) {
             phase_steps = 1;
         }
         if (phase_steps && x < 736) {
@@ -216,16 +226,41 @@ switch (motion) {
         motion_speed += 0.5;
         break;
 
+    case CreditsMotion.KidIcarusFloor:
+        // G1041 starts gravity at frame 7, which is also the source clip's loop point.
+        if (image_index >= 7) {
+            y = floor(y + motion_speed);
+            motion_speed += 0.5;
+        }
+        // This authored floor prop is outside the viewport and never reaches a Layer 1 obstacle.
+        if (y >= room_height) {
+            instance_destroy();
+        }
+        break;
+
+    case CreditsMotion.KidIcarusPlatform:
+        // G1044 reacts to a fresh contact before G1043 applies this step's gravity.
+        // Each authored platform's bottom row meets its Layer 1 backdrop directly.
+        var _touching = bounce_platform != -1 && y > layer_sprite_get_y(bounce_platform);
+        if (_touching && !touching_backdrop) {
+            motion_speed = -10 - irandom(2);
+        }
+        touching_backdrop = _touching;
+        y = floor(y + motion_speed);
+        motion_speed += 0.5;
+        break;
+
     case CreditsMotion.NinjaTurret:
-        if (y + sprite_get_bbox_top(sprite_index) - sprite_get_yoffset(sprite_index) > _top
-            && y + sprite_get_bbox_bottom(sprite_index) - sprite_get_yoffset(sprite_index) < _top + 480) {
+        // G1051, G1065, G1067 and G1069 fire before the view-qualified counter advances.
+        if (phase_steps >= shot_interval) {
+            var _shot = credits_effect_spawn(spr_credits_actor_ninja_gaiden_shot, x + 13, y - 3, -10, 0, 80);
+            _shot.first_visible_step = 1;
+            _shot.left_limit = -64;
+            phase_steps = 0;
+        }
+        if (credits_actor_inside_view(_top, 0)) {
             ++phase_steps;
-            image_index = floor(phase_steps * image_number / shot_interval);
-            if (phase_steps == shot_interval) {
-                credits_effect_spawn(spr_credits_actor_ninja_gaiden_shot, x, y, -10, 0, 80);
-                phase_steps = 0;
-                image_index = 0;
-            }
+            image_index = min(image_number - 1, floor(phase_steps * image_number / shot_interval));
         }
         break;
 
@@ -249,14 +284,14 @@ switch (motion) {
                 _effect.y = floor(y + lengthdir_y(_radius, _angle));
             }
         }
-        if (_near && floor(_timer / 50) > floor((_timer - 20) / 50)) {
+        if (_age > 0 && _timer div 50 > (_timer - 20) div 50) {
             var _trail = credits_effect_spawn(spr_credits_actor_missingno_trail, x, y, 0, 0, 25);
             _trail.scale = 4;
         }
         // G1086–1087 start ten recovery particles every half second.
-        if (_near && _age > 0 && _age mod 25 == 0) {
+        if (_age > 0 && _age mod 25 == 0) {
             for (var _index = 0; _index < 10; ++_index) {
-                var _particle = credits_effect_spawn(spr_missingno_recover, x, y, 0, 0, 35);
+                var _particle = credits_effect_spawn(spr_missingno_recover, x, y, 0, 0, 34);
                 _particle.orbit_start = _index * 35;
                 _particle.scale = 2;
             }
@@ -264,7 +299,7 @@ switch (motion) {
         break;
 
     case CreditsMotion.Solgryn:
-        if (_player_y >= 18927 && _player_y <= 19470) {
+        if (_player_y >= 18927 && _player_y < 19470) {
             y += 3;
             image_angle += 1;
         }

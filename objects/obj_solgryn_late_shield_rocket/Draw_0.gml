@@ -6,12 +6,13 @@ var _height = sprite_get_height(_sprite);
 var _origin_x = sprite_get_xoffset(_sprite);
 var _origin_y = sprite_get_yoffset(_sprite);
 var _width = sprite_get_width(_sprite);
-if (!fired) {
+// G1190 evaluates its amplitude before advancing age. Fusion divides by zero as zero.
+if (!fired || beam_age <= 1) {
     draw_self();
     exit;
 }
-var _phase = max(0, beam_age - 1) * 0.06;
-var _amplitude = 1 / max(1, beam_age - 1);
+var _phase = (beam_age - 1) * 0.06;
+var _amplitude = 1 / (beam_age - 1);
 
 // Clip each shifted one-pixel source row within its own frame on the texture page.
 for (var _row = 0; _row < _height; ++_row) {

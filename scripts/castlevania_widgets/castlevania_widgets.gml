@@ -188,12 +188,12 @@ function castlevania_widget_hit(_bullet) {
         return false;
     }
     if (_widget.widget_variant == 4) {
-        // Group 727 advances the ghoul's lifetime by fifteen steps per shot.
+        // G727–728 advance the ghoul's lifetime by fifteen steps per shot.
         _widget.widget_age += 15;
         audio_play_sound(snd_mario_bump, 1, false);
         return true;
     }
-    if (!_bullet.reflected) {
+    if (_bullet.object_index == obj_bullet && !_bullet.reflected) {
         _bullet.reflected = true;
         _bullet.reflection_angle = irandom_range(11, 13) * 11.25;
         audio_play_sound(snd_king_dedede_shoot, 1, false);

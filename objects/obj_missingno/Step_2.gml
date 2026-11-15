@@ -1,11 +1,8 @@
 ++scene_steps;
-if (timer_reset_second >= 0) {
-    attempt_steps = max(0, scene_steps - timer_reset_second * 50);
-}
 var _player = instance_find(obj_player, 0);
 var _won_this_step = hit_points <= 0 && victory_age < 0;
 if (_won_this_step) {
-    missingno_victory_begin(_player, attempt_steps);
+    missingno_victory_begin(_player, game_controller.frame_seconds - timer_reset_second);
 }
 
 // The viewport reads the previous shake offsets. G1018 then decrements the impulse.
@@ -18,14 +15,6 @@ if (victory_age >= 0) {
     }
 } else if (_player != noone) {
     ++fight_age;
-    if (ninja_gaiden_toggle_cd()) {
-        if (global.run.ninja_gaiden_cd > 0 || fight_age >= 780) {
-            start_battle_music();
-        } else if (game_controller.stage_music_instance != -1) {
-            audio_stop_sound(game_controller.stage_music_instance);
-            game_controller.stage_music_instance = -1;
-        }
-    }
     if (fight_age >= 600 && fight_age < 655) {
         target_x += 10;
     }
@@ -43,6 +32,10 @@ if (victory_age >= 0) {
         missingno_intro_skip();
         missingno_attack_flash();
         intro_cry = audio_play_sound(snd_missingno_cry, 1, false);
+        // G729 starts the synced music cue only if channel 2 is silent.
+        if (!game_controller.stage_music_is_playing()) {
+            game_controller.start_stage_music(snd_ninja_gaiden_boss_exit_music, true, true, 44100, 13.15);
+        }
     }
 } else {
     fight_age = 0;
@@ -55,7 +48,7 @@ if ((fight_age >= 650 && fight_age <= 800) || hud_opacity > 0) {
 
 // G734 eases to the two target coordinates and adds the room-clock bob on Y.
 x = floor(x + (target_x - x) * 0.2 + sign(target_x));
-y = floor(y + (target_y - y) * 0.2 + sign(target_y) + dsin((scene_steps * 20) / 3) * 4);
+y = floor(y + (target_y - y) * 0.2 + sign(target_y) + dsin((game_controller.frame_elapsed_us div 1000) / 3) * 4);
 missingno_pose_step();
 if (victory_age < 0 && _player != noone) {
     missingno_attacks_step(_player);

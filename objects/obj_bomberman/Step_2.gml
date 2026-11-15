@@ -44,7 +44,7 @@ if (hit_flash_age > 0 && ++hit_flash_age >= 10) {
     hit_flash_age = 0;
 }
 bomberman_ordnance_step(_player);
-bomberman_pose_trail_step(scene_steps);
+bomberman_pose_trail_step();
 
 if (_player == noone) {
     game_controller.fade_stage_music();

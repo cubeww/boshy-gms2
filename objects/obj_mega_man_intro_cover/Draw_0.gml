@@ -17,7 +17,7 @@ with (obj_mega_man) {
         _text_y += 12;
     }
     if (show_boss_timer) {
-        var _time = string(attempt_steps div 50) + " seconds";
+        var _time = string(game_controller.frame_seconds - timer_reset_second) + " seconds";
         draw_boshy_text(_time, 634 - string_length(_time) * 8, _text_y);
     }
     mega_man_victory_draw();

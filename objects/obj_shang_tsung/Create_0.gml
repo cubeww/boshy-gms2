@@ -9,8 +9,7 @@ show_boss_timer = game_has_item("Timer");
 
 fight_age = -80;
 scene_steps = 0;
-attempt_start_steps = 0;
-attempt_steps = global.run.boss_entry_steps;
+timer_base_seconds = global.run.boss_entry_seconds;
 hit_flash_age = 0;
 shake_strength = 0;
 shake_x = 0;
@@ -31,16 +30,6 @@ add_dialogue = function(_lines) {
         shown: 0, hold_steps: 0, x: x - 47, y: y - 100, age: 0, bob: 0
     });
     audio_play_sound(snd_shang_tsung_dialogue_open, 2, false);
-};
-
-start_fight_music = function() {
-    if (global.run.mega_man_world_wily_cd) {
-        game_controller.start_stage_music(snd_mega_man_world_wily_cd);
-    } else if (fight_age >= 490) {
-        game_controller.start_stage_music(snd_shang_tsung_music, false, true);
-    } else {
-        game_controller.start_stage_music(snd_shang_tsung_intro_music, false, false, 11025);
-    }
 };
 
 take_player_shot = function(_shot) {
@@ -70,14 +59,9 @@ take_player_shot = function(_shot) {
 
 shang_tsung_attacks_setup();
 shang_tsung_victory_setup();
-if (!struct_exists(global.run, "mega_man_world_wily_cd")) {
-    global.run.mega_man_world_wily_cd = false;
-}
-if (struct_exists(global.run, "shang_wily_music_handoff")) {
-    game_controller.stage_music_instance = global.run.shang_wily_music_handoff;
-    game_controller.stage_music_can_resume = true;
-    struct_remove(global.run, "shang_wily_music_handoff");
-} else {
-    start_fight_music();
+intro_music = -1;
+if (game_selected_cd() == 0) {
+    // G673 plays the introduction outside channel 2 when no CD is queued at entry.
+    intro_music = audio_play_sound(snd_shang_tsung_intro_music, 1, false, global.settings.music_volume / 100);
 }
 entrance_voice = play_boshy_voice(snd_tutorial_entrance, (44000 + irandom(19999) - irandom(9999)) / 48000);

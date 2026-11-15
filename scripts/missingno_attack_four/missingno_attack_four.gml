@@ -49,8 +49,9 @@ function missingno_water_step(_player) {
         // G851–852 apply one lift to the player and emit additive droplets.
         --_player.vsp;
         attack_player_float = true;
-        var _elapsed = scene_steps * 20;
-        if ((_elapsed div 50) != ((_elapsed - 20) div 50)) {
+        water_splash_wait_us -= delta_time;
+        if (water_splash_wait_us <= 0) {
+            water_splash_wait_us += 50000;
             instance_create_layer(floor(_player.x), floor(_player.y), "Attack Effects", obj_missingno_water_splash);
         }
     }

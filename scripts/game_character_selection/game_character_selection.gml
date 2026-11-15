@@ -1,7 +1,23 @@
 #macro CHARACTER_BOSHY 12
 
 function game_character_definition(_id) {
+    if (_id == CHARACTER_CUSTOM) {
+        return game_custom_character();
+    }
     return _id == CHARACTER_BOSHY ? boshy_character() : stock_character(_id);
+}
+
+function game_character_select_custom(_name) {
+    if (!custom_character_available(_name)) {
+        return false;
+    }
+    if (global.profile.character_id != CHARACTER_CUSTOM || global.profile.custom_character != _name) {
+        global.profile.character_id = CHARACTER_CUSTOM;
+        global.profile.custom_character = _name;
+        global.profile.dirty = true;
+        game_profile_save();
+    }
+    return true;
 }
 
 function game_character_status(_entry, _profile = undefined) {

@@ -12,7 +12,8 @@ if (!defeated) {
         if (show_boss_health) {
             _status += "\n";
         }
-        _status += string(attempt_steps div 50) + " seconds";
+        var _seconds = attempt_start_second < 0 ? 0 : game_controller.frame_seconds - attempt_start_second;
+        _status += string(_seconds) + " seconds";
     }
     if (_status != "") {
         draw_boshy_text(_status, _left + 316, _top + 12);

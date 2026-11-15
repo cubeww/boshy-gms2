@@ -1,10 +1,10 @@
 if (trophy_steps >= 0 && ++trophy_steps >= 226) {
     trophy_steps = -1;
 }
-exit_notice_steps = max(0, exit_notice_steps - 1);
 
 var _player = instance_find(obj_player, 0);
 prehistorik_pickups_step(_player);
+chest_view_update(game_controller, _player, prehistorik_pickup_slot >= 0 ? prehistorik_pickup_age : -1);
 if (_player == noone || _player.input_locked) {
     exit;
 }
@@ -46,7 +46,10 @@ if (instance_number(obj_bullet) >= 5 && game_trophy_unlock("TriggerFinger")) {
 if (_player.boshy_mask_meeting(inst_castlevania_boss_door)) {
     room_goto(rm_skeleton_king);
     exit;
-} else if (_player.boshy_mask_meeting(inst_castlevania_puzzle_door)) {
-    exit_notice = "Secret puzzle room pending";
-    exit_notice_steps = 100;
+}
+
+// G1104 enters the puzzle directly, using the door's arrival position.
+var _puzzle_door = inst_castlevania_puzzle_door;
+if (_player.boshy_mask_meeting(_puzzle_door)) {
+    game_travel_by_teleporter(_puzzle_door.destination_room, _puzzle_door.destination_x, _puzzle_door.destination_y, false);
 }

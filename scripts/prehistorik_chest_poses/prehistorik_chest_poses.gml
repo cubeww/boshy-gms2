@@ -1,4 +1,43 @@
-function prehistorik_draw_chest_pose(_player, _character_id, _reveal, _steps) {
+function prehistorik_chest_pose_step(_player, _age) {
+    _player.chest_pose_age = _age;
+    if (_age <= 0) {
+        _player.chest_pose_clip = undefined;
+        _player.chest_pose_units = 0;
+        return;
+    }
+    if (struct_exists(_player.character, "custom")) {
+        return;
+    }
+
+    var _clip = prehistorik_chest_clip(_player, _age >= 250);
+    if (is_undefined(_player.chest_pose_clip) || _player.chest_pose_clip != _clip) {
+        // Fusion's Force Animation changes the pose without advancing that tick.
+        _player.chest_pose_clip = _clip;
+        _player.chest_pose_units = 0;
+    } else if (_age <= 200 || _age > 250) {
+        // The native animation advances before STOPANIM at 200 and resumes after 250.
+        _player.chest_pose_units += round(_clip.speed * delta_time / 20000);
+    }
+}
+
+function prehistorik_draw_chest_pose(_player) {
+    var _age = _player.chest_pose_age;
+    if (_age == 0) {
+        // The collision starts the timer. The opening pose is forced on the next step.
+        with (_player) {
+            event_perform(ev_draw, 0);
+        }
+        return;
+    }
+    var _reveal = _age >= 250;
+    if (struct_exists(_player.character, "custom")) {
+        var _pose = _reveal ? CustomPose.ItemGet : CustomPose.OpenChest;
+        // The Picture extension keeps its own frame counter while stock actors are stopped.
+        var _steps = _reveal ? _age - 250 : _age - 1;
+        var _frame = custom_character_frame_at(_player.character.custom.animations[_pose], _steps);
+        game_character_draw(_player.character, _pose, _frame, _player.visual_facing(), _player.x, _player.y);
+        return;
+    }
     // Original frame 2 animations 12 and 13. Atlas entries use the native image handles.
     // Each frame stores its atlas rectangle and cropped source hotspot.
     static _frames = {
@@ -284,9 +323,53 @@ function prehistorik_draw_chest_pose(_player, _character_id, _reveal, _steps) {
         f6778: [1, 1, 38, 112, 16, 111],
         f6779: [41, 1, 38, 112, 16, 111],
         f6781: [81, 1, 38, 112, 16, 111],
-        f6782: [121, 1, 38, 112, 16, 111]
+        f6782: [121, 1, 38, 112, 16, 111],
+        f71: [1, 469, 32, 32, 0, 0],
+        f123: [35, 469, 18, 18, 8, 17],
+        f588: [55, 469, 18, 19, 8, 18],
+        f1560: [75, 469, 22, 21, 10, 20],
+        f1565: [99, 469, 23, 21, 11, 20],
+        f1566: [124, 469, 24, 21, 12, 20],
+        f1567: [150, 469, 23, 20, 11, 19],
+        f1568: [175, 469, 22, 21, 11, 20],
+        f1569: [199, 469, 23, 21, 11, 20],
+        f1586: [224, 469, 24, 21, 11, 20],
+        f1587: [250, 469, 23, 20, 11, 19],
+        f1622: [275, 469, 16, 22, 7, 21],
+        f1623: [293, 469, 16, 21, 7, 20],
+        f1624: [311, 469, 16, 23, 7, 22],
+        f1625: [329, 469, 16, 23, 7, 22],
+        f1626: [347, 469, 16, 23, 7, 22],
+        f1627: [365, 469, 17, 23, 8, 22],
+        f1628: [384, 469, 16, 21, 8, 20],
+        f1629: [402, 469, 16, 22, 8, 21],
+        f1630: [420, 469, 16, 23, 8, 22],
+        f1631: [438, 469, 16, 23, 8, 22],
+        f1632: [456, 469, 16, 23, 8, 22],
+        f1633: [474, 469, 17, 23, 8, 22],
+        f1679: [1, 503, 20, 23, 7, 22],
+        f1680: [23, 503, 20, 23, 12, 22],
+        f2439: [45, 503, 13, 16, 6, 15],
+        f2444: [60, 503, 13, 16, 6, 15],
+        f6786: [75, 503, 18, 20, 8, 19],
+        f6793: [95, 503, 18, 20, 9, 19]
     };
+    var _clip = _player.chest_pose_clip;
+    var _frame_index = max(0, (_player.chest_pose_units - 1) div 100);
+    var _count = array_length(_clip.frames);
+    if (_frame_index >= _count) {
+        if (_clip.loop) {
+            _frame_index = _clip.loop_start + (_frame_index - _count) mod (_count - _clip.loop_start);
+        } else {
+            _frame_index = _count - 1;
+        }
+    }
+    var _frame = struct_get(_frames, _clip.frames[_frame_index]);
+    draw_sprite_part_ext(spr_prehistorik_chest_poses, 0, _frame[0], _frame[1], _frame[2], _frame[3],
+        _player.x - _frame[4], _player.y - _frame[5], 1, 1, c_white, 1);
+}
 
+function prehistorik_chest_clip(_player, _reveal) {
     // Opening right/left, then item-get right/left, keyed by License/Character ID.
     static _clips = {
         c12: [
@@ -507,25 +590,63 @@ function prehistorik_draw_chest_pose(_player, _character_id, _reveal, _steps) {
         ]
     };
 
-    var _character_clips = struct_get(_clips, "c" + string(_character_id));
+    // Frames 6 and 53 use Player 574 and earlier clones of the first five stock costumes.
+    // The clones without animations 12/13 resolve both requests to their idle clip.
+    static _boss_clips = {
+        c12: [
+            { frames: ["f588"], speed: 50, loop: true, loop_start: 0 },
+            { frames: ["f588"], speed: 50, loop: true, loop_start: 0 },
+            { frames: ["f123"], speed: 50, loop: false, loop_start: 0 },
+            { frames: ["f123"], speed: 50, loop: false, loop_start: 0 }
+        ],
+        c16: [
+            { frames: ["f1560", "f1565", "f1566", "f1567"], speed: 30, loop: true, loop_start: 0 },
+            { frames: ["f1568", "f1569", "f1586", "f1587"], speed: 30, loop: true, loop_start: 0 }
+        ],
+        c20: [
+            { frames: ["f71"], speed: 50, loop: false, loop_start: 0 },
+            { frames: ["f71"], speed: 50, loop: false, loop_start: 0 }
+        ],
+        c24: [
+            { frames: ["f1628", "f1629", "f1630", "f1631", "f1632", "f1633", "f1632", "f1629", "f1628"],
+                speed: 25, loop: true, loop_start: 0 },
+            { frames: ["f1623", "f1622", "f1624", "f1625", "f1626", "f1627", "f1626", "f1622", "f1623"],
+                speed: 25, loop: true, loop_start: 0 }
+        ],
+        c28: [
+            { frames: ["f1679"], speed: 50, loop: true, loop_start: 0 },
+            { frames: ["f1680"], speed: 50, loop: true, loop_start: 0 }
+        ],
+        c32: [
+            { frames: ["f2444"], speed: 50, loop: false, loop_start: 0 },
+            { frames: ["f2439"], speed: 50, loop: false, loop_start: 0 }
+        ]
+    };
+    static _unarmored = [
+        { frames: ["f6786"], speed: 25, loop: true, loop_start: 0 },
+        { frames: ["f6793"], speed: 25, loop: true, loop_start: 0 }
+    ];
+    static _meat_boy_open = [
+        { frames: ["f5583"], speed: 20, loop: true, loop_start: 0 },
+        { frames: ["f5586"], speed: 20, loop: true, loop_start: 0 }
+    ];
+
+    var _direction = _player.facing < 0 ? 1 : 0;
+    if (_player.arthur_armor_lost) {
+        return _unarmored[_direction];
+    }
+    var _character_id = global.profile.character_id;
+    if (_character_id == 96 && room != rm_prehistorik && !_reveal) {
+        return _meat_boy_open[_direction];
+    }
+    var _key = "c" + string(_character_id);
+    var _character_clips = (room == rm_ryu || room == rm_cheetah_men) ? struct_get(_boss_clips, _key) : undefined;
+    if (is_undefined(_character_clips)) {
+        _character_clips = struct_get(_clips, _key);
+    }
     if (is_undefined(_character_clips)) {
         _character_clips = _clips.c12;
     }
-    var _index = _reveal ? 2 : 0;
-    if (_player.facing < 0) {
-        ++_index;
-    }
-    var _clip = _character_clips[_index];
-    var _frame_index = (_steps * _clip.speed) div 100;
-    var _count = array_length(_clip.frames);
-    if (_frame_index >= _count) {
-        if (_clip.loop) {
-            _frame_index = _clip.loop_start + (_frame_index - _count) mod (_count - _clip.loop_start);
-        } else {
-            _frame_index = _count - 1;
-        }
-    }
-    var _frame = struct_get(_frames, _clip.frames[_frame_index]);
-    draw_sprite_part_ext(spr_prehistorik_chest_poses, 0, _frame[0], _frame[1], _frame[2], _frame[3],
-        _player.x - _frame[4], _player.y - _frame[5], 1, 1, c_white, 1);
+    var _slot = _reveal && array_length(_character_clips) == 4 ? 2 : 0;
+    return _character_clips[_slot + _direction];
 }

@@ -9,8 +9,7 @@ max_health = _health_by_difficulty[_difficulty];
 hit_points = max_health;
 scene_steps = 0;
 fight_age = 0;
-attempt_steps = 0;
-timer_started = false;
+attempt_start_second = -1;
 spawn_counter = 0;
 lava_amplitude = 10;
 vertical_speed = 0;
@@ -39,7 +38,9 @@ sprite_index = spr_mario_idle;
 
 mario_projectiles_setup();
 mario_victory_setup();
-game_controller.start_stage_music(snd_mario_music, true, false);
+if (game_selected_cd() == 0) {
+    game_controller.start_stage_music(snd_mario_music, true, false);
+}
 
 mario_set_pose = function(_right, _left) {
     var _sprite = facing < 0 ? _left : _right;
@@ -70,13 +71,18 @@ take_player_shot = function(_bullet) {
         return false;
     }
 
-    --hit_points;
+    take_hit(1);
+    return true;
+};
+
+take_hit = function(_damage) {
+    hit_points = max(0, hit_points - _damage);
     audio_play_sound(snd_mario_bump, 1, false);
     if (hit_flash_age < 0) {
         hit_flash_age = 0;
     }
     if (hit_points > 0) {
-        return true;
+        return;
     }
 
     // Groups 756–759 restore the floor and change Mario into the death animation.
@@ -94,7 +100,7 @@ take_player_shot = function(_bullet) {
     }
     audio_play_sound(snd_mario_die, 1, false);
 
-    var _seconds = attempt_steps div 50;
+    var _seconds = game_controller.frame_seconds - attempt_start_second;
     var _progress = game_current_progress();
     if (_seconds < _progress.mario_best_time) {
         _progress.mario_best_time = _seconds;
@@ -108,5 +114,4 @@ take_player_shot = function(_bullet) {
         array_push(trophy_titles, "It's-a me!");
     }
     game_profile_save();
-    return true;
 };

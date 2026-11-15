@@ -12,7 +12,7 @@ function shang_tsung_draw_hud() {
         _text_y += 12;
     }
     if (show_boss_timer) {
-        var _time = string(attempt_steps div 50) + " seconds";
+        var _time = string(timer_base_seconds + game_controller.frame_seconds) + " seconds";
         draw_boshy_text(_time, 635 - string_length(_time) * 8, _text_y);
     }
 

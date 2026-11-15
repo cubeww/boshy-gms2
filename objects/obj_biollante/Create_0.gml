@@ -9,11 +9,11 @@ hit_points = max_health;
 easy_mode = _difficulty == 0;
 show_boss_health = game_has_item("Scouter");
 show_boss_timer = game_has_item("Timer");
-entry_steps = struct_exists(global.run, "boss_entry_steps") ? global.run.boss_entry_steps : 0;
+entry_seconds = global.run.boss_entry_seconds;
 
 scene_steps = 0;
 fight_age = 0;
-attempt_steps = 0;
+timer_reset_second = -1;
 shield_reaction = 0;
 hit_flash_age = -1;
 intro_flash_steps = 0;
@@ -52,7 +52,7 @@ biollante_set_pose = function(_sprite, _restart = false) {
     sprite_index = _sprite;
     image_index = 0;
     pose_counter = 0;
-    pose_speed = round(100 * sprite_get_speed(_sprite) / game_get_speed(gamespeed_fps));
+    pose_speed = sprite_get_speed(_sprite);
     bite_active = _sprite == spr_biollante_anim_12_left;
     // Fusion transforms the image's action point by its hotspot, scale, and angle.
     switch (_sprite) {
@@ -88,22 +88,21 @@ biollante_advance_pose = function() {
     if (image_number <= 1) {
         return;
     }
-    pose_counter += pose_speed;
-    // Fusion increments the frame only after its animation counter exceeds 100.
-    if (pose_counter <= 100) {
-        return;
-    }
-    pose_counter -= 100;
-    ++image_index;
-    if (image_index < image_number) {
-        return;
-    }
-    if (sprite_index == spr_biollante_anim_16_left) {
-        image_index = 4;
-    } else if (sprite_index == spr_biollante_idle_left) {
-        image_index = 0;
-    } else {
-        biollante_set_pose(spr_biollante_idle_left);
+    // TimeMovements scales the speed by elapsed time and rounds each update.
+    pose_counter += floor(pose_speed * delta_time / 10000 + 0.5);
+    while (pose_counter > 100) {
+        pose_counter -= 100;
+        if (++image_index < image_number) {
+            continue;
+        }
+        if (sprite_index == spr_biollante_anim_16_left) {
+            image_index = 4;
+        } else if (sprite_index == spr_biollante_idle_left) {
+            image_index = 0;
+        } else {
+            biollante_set_pose(spr_biollante_idle_left);
+            break;
+        }
     }
 };
 
@@ -124,10 +123,10 @@ take_player_shot = function(_bullet) {
     if (!_hit) {
         return false;
     }
-    if (hit_flash_age < 0) {
-        hit_flash_age = 1;
-    }
     if (sprite_index == spr_biollante_anim_13_left) {
+        if (hit_flash_age < 0) {
+            hit_flash_age = 1;
+        }
         // Groups 701 and 765 select one of Fusion directions 12, 13, and 14.
         _bullet.reflected = true;
         _bullet.reflection_angle = irandom_range(12, 14) * 11.25;
@@ -139,12 +138,19 @@ take_player_shot = function(_bullet) {
         }
         return false;
     }
-    hit_points = max(0, hit_points - (sprite_index == spr_biollante_anim_14_left ? 2 : 1));
+    take_hit(sprite_index == spr_biollante_anim_14_left ? 2 : 1);
+    return true;
+};
+
+take_hit = function(_damage) {
+    if (hit_flash_age < 0) {
+        hit_flash_age = 1;
+    }
+    hit_points = max(0, hit_points - _damage);
     audio_play_sound(snd_mario_bump, 1, false);
     if (hit_points == 0) {
-        biollante_victory_begin(instance_find(obj_player, 0), attempt_steps);
+        biollante_victory_begin(instance_find(obj_player, 0), game_controller.frame_seconds - timer_reset_second);
     }
-    return true;
 };
 
 biollante_draw_hud = function(_viewport) {
@@ -165,8 +171,9 @@ biollante_draw_hud = function(_viewport) {
         _status = string(hit_points) + " / " + string(max_health);
     }
     if (show_boss_timer) {
-        var _elapsed = fight_age < 830 ? entry_steps + scene_steps : attempt_steps;
-        _status += (_status == "" ? "" : "\n") + string(_elapsed div 50) + " seconds";
+        var _seconds = timer_reset_second < 0 ? entry_seconds + game_controller.frame_seconds
+            : game_controller.frame_seconds - timer_reset_second;
+        _status += (_status == "" ? "" : "\n") + string(_seconds) + " seconds";
     }
     if (_status != "") {
         var _lines = string_split(_status, "\n");

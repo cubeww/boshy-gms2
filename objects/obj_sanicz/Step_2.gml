@@ -22,7 +22,6 @@ if (sprite_index >= 0) {
 }
 if (victory_age < 0) {
     if (_player != noone) {
-        ++attempt_steps;
         ++fight_age;
         sanicz_movement_step(_player);
     } else {

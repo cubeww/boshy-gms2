@@ -9,8 +9,7 @@ show_boss_timer = game_has_item("Timer");
 
 entrance_voice = play_boshy_voice(snd_tutorial_entrance, (44000 + irandom(19999) - irandom(9999)) / 48000);
 
-boss_defeated = function(_attempt_steps) {
-    var _seconds = _attempt_steps div 50;
+boss_defeated = function(_seconds) {
     var _progress = game_current_progress();
     if (_seconds < _progress.hello_kitty_best_time) {
         _progress.hello_kitty_best_time = _seconds;

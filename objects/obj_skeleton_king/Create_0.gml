@@ -12,7 +12,7 @@ show_boss_health = game_has_item("Scouter");
 show_boss_timer = game_has_item("Timer");
 
 scene_steps = 0;
-attempt_steps = 0;
+attempt_start_second = 0;
 king_started = false;
 king_age = -1;
 king_defeated = false;
@@ -114,7 +114,7 @@ skeleton_king_draw_hud = function(_viewport) {
         _text_y += 12;
     }
     if (show_boss_timer) {
-        var _time = string(attempt_steps div 50) + " seconds";
+        var _time = string(game_controller.frame_seconds - attempt_start_second) + " seconds";
         draw_boshy_text(_time, _left + (640 - string_length(_time) * 8) * _scale,
             _top + _text_y * _scale, 1, _scale);
     }

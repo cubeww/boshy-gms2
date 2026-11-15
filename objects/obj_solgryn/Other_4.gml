@@ -1,6 +1,8 @@
 camera_set_view_pos(view_camera[0], view_left, view_top);
 game_controller.show_controls = false;
-game_controller.start_stage_music(snd_solgryn_music, false);
+if (game_selected_cd() == 0) {
+    game_controller.start_stage_music(snd_solgryn_music, false);
+}
 if (struct_exists(global.run, "solgryn_portal_arrival")) {
     arrival_age = 0;
     // Keep the first picture blurred even if it is drawn before the first End Step.

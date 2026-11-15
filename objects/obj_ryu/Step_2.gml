@@ -48,8 +48,10 @@ if (_player != noone && fight_age < 0 && _player.x >= 1280) {
     y = -56;
     fight_age = 0;
     ryu_set_pose(0, -1);
-    // Fusion group 71 starts a fresh theme when Ryu's intro begins on each attempt.
-    game_controller.start_stage_music(snd_ryu_music, false, false, 48000);
+    // G71 starts the theme when Ryu enters if channel 2 is idle.
+    if (!game_controller.stage_music_is_playing()) {
+        game_controller.start_stage_music(snd_ryu_music, false, false, 48000);
+    }
 }
 
 if (_player != noone && fight_age >= 0 && !defeated) {
@@ -92,8 +94,11 @@ if (_player != noone && fight_age >= 0 && !defeated) {
             audio_sound_set_track_position(game_controller.stage_music_instance, 21.5);
         }
     }
+    if (fight_age == 1080 && attempt_start_second < 0) {
+        // G698 and G708 reset the score timer while preserving the room's one-second pulse.
+        attempt_start_second = game_controller.frame_seconds;
+    }
     if (fight_age >= 1080) {
-        ++attempt_steps;
         fight_age = ryu_attacks_step(_player, fight_age);
         if (!instance_exists(_player)) {
             _player = noone;
@@ -196,11 +201,13 @@ game_controller.directional_blur_y = dsin(_blur_angle) * blur_strength * 0.01;
 
 if (_player == noone) {
     prehistorik_pickups_step(noone);
+    chest_view_update(game_controller, noone, -1);
     game_controller.fade_stage_music();
     exit;
 }
 if (!_player.input_locked && _player.touching_hazard()) {
     _player.die();
+    chest_view_update(game_controller, noone, -1);
     game_controller.fade_stage_music();
     exit;
 }

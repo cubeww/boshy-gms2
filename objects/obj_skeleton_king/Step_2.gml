@@ -18,9 +18,6 @@ if (_player != noone) {
         inst_skeleton_king_torch.torch_dropped = true;
         inst_skeleton_king_torch.torch_fall_speed = -8;
     }
-    if (blob_age < 1500) {
-        ++attempt_steps;
-    }
     skeleton_king_set_view(_player);
 } else {
     game_controller.fade_stage_music();

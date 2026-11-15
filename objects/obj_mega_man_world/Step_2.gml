@@ -1,9 +1,9 @@
-++global.run.boss_entry_steps;
-exit_notice_steps = max(0, exit_notice_steps - 1);
+global.run.boss_entry_seconds += game_controller.frame_second_tick;
 var _player = instance_find(obj_player, 0);
 var _portal = inst_mega_man_world_hub_portal;
 
 if (_player == noone || _player.dead) {
+    chest_view_update(game_controller, noone, -1);
     mega_man_world_route_platform_step(noone);
     game_controller.fade_stage_music();
     if (portal_age >= 0) {
@@ -58,14 +58,6 @@ if (_player.input_locked) {
     exit;
 }
 
-// G102 selects the Wily CD with 9. Repeating 9 restores the stage track so Tab stays available for debug info.
-var _cd_key = ord("9");
-if (keyboard_check_pressed(_cd_key) && !game_key_is_bound(global.settings.keys, _cd_key) && game_has_item("Wily CD")) {
-    global.run.mega_man_world_wily_cd = !global.run.mega_man_world_wily_cd;
-    global.run.music_position = 0;
-    set_stage_track(global.run.mega_man_world_wily_cd);
-}
-
 var _over_portal = _player.boshy_mask_meeting(_portal);
 if (_over_portal && !portal_contact) {
     // G862–867 center, lift and spin the player while the viewport pixelates.
@@ -79,17 +71,14 @@ if (_over_portal && !portal_contact) {
 portal_contact = _over_portal;
 
 with (obj_mega_man_world_exit) {
-    if (_player.boshy_mask_meeting(id)) {
-        if (destination_room != noone) {
-            if (destination_room == rm_shang_tsung && global.run.mega_man_world_wily_cd
-                && audio_is_playing(other.game_controller.stage_music_instance)) {
-                // Shang Tsung G673 leaves an active channel 2 alone.
-                global.run.shang_wily_music_handoff = other.game_controller.stage_music_instance;
-                other.game_controller.stage_music_instance = -1;
-            }
-            room_goto(destination_room);
-        } else {
-            other.show_exit_notice(destination_notice);
-        }
+    if (destination_room == noone || !_player.boshy_mask_meeting(id)) {
+        continue;
     }
+    if (destination_room == rm_pokemon_puzzle) {
+        // G770 and G796 both use the same direct puzzle arrival.
+        game_travel_by_teleporter(destination_room, destination_x, destination_y, false);
+        break;
+    }
+    room_goto(destination_room);
+    break;
 }

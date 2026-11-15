@@ -66,7 +66,7 @@ function king_dedede_demonstrate_command() {
 function king_dedede_capture_response() {
     var _keys = global.settings.keys;
     // These keys follow the input event order in Fusion groups 710–714.
-    var _inputs = [_keys.right, _keys.left, vk_down, _keys.jump, _keys.shoot];
+    var _inputs = [game_horizontal_key(_keys, true), game_horizontal_key(_keys, false), _keys.down, _keys.jump, _keys.shoot];
     for (var _i = 0; _i < array_length(_inputs); ++_i) {
         if (keyboard_check_pressed(_inputs[_i]) && array_length(dedede_response) < dedede_command_count) {
             array_push(dedede_response, _i);

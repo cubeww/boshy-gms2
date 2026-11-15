@@ -2,6 +2,8 @@ enum SolgrynEarlyShot {
     Projectile,
     ProjectileDecay,
     IceBurst,
+    IceBurstDecay,
+    FiniteEffect,
     Beam,
     Head,
     Puff,
@@ -22,7 +24,7 @@ function solgryn_early_ordnance_init() {
     shot_phase = 0;
     shot_facing = 1;
     shot_additive = false;
-    shot_duration = 0;
+    shot_animation_rate = 0;
     shot_origin_x = x;
     shot_origin_y = y;
 }
@@ -91,10 +93,13 @@ function solgryn_early_explosion(_x, _y, _layer = "Attack Effects", _hazard = tr
 }
 
 function solgryn_early_finite_effect(_x, _y, _sprite, _angle = 0) {
-    var _effect = solgryn_early_ordnance(_x, _y, _sprite, undefined, "Attack Effects", false, true);
+    var _effect = solgryn_early_ordnance(_x, _y, _sprite, SolgrynEarlyShot.FiniteEffect,
+        "Attack Effects", false, true);
     _effect.image_angle = _angle;
-    _effect.shot_duration = ceil(sprite_get_number(_sprite) * game_get_speed(gamespeed_fps)
-        / sprite_get_speed(_sprite));
+    _effect.image_speed = 0;
+    // Active 35 and 36 each enter their lone Disappearing clip at tick two.
+    _effect.shot_age = 2;
+    _effect.shot_animation_rate = round(sprite_get_speed(_sprite) * 2);
 }
 
 function solgryn_early_splash(_x, _y) {
@@ -125,11 +130,6 @@ function solgryn_early_near_edge(_margin) {
 
 function solgryn_early_ordnance_step() {
     shot_age += 1;
-    if (shot_duration > 0 && shot_age >= shot_duration) {
-        instance_destroy();
-        return;
-    }
-
     switch (shot_kind) {
         case SolgrynEarlyShot.Projectile:
             // G734 switches the shot to Disappearing at the near-view margins. G1025–27 keep
@@ -153,22 +153,43 @@ function solgryn_early_ordnance_step() {
             break;
 
         case SolgrynEarlyShot.IceBurst:
-            // G704–705, G710–711. A right-side launch sheds two pieces per step.
+            // G704–705 and G710–711 sample each splash after their respective move.
             var _boss = instance_find(obj_solgryn, 0);
             var _splash = _boss != noone && _boss.fight_age < 15000;
             if (_splash) {
-                solgryn_early_splash(x + irandom(29) - irandom(29), y + irandom(31) - irandom(31));
                 x += shot_facing * 2;
-                if (shot_facing < 0) {
-                    solgryn_early_splash(x + irandom(29) - irandom(29), y + irandom(31) - irandom(31));
-                }
+                solgryn_early_splash(x + irandom(29) - irandom(29), y + irandom(31) - irandom(31));
             }
             if (_splash || shot_facing > 0) {
                 y = floor(y + shot_drift);
                 shot_drift += shot_facing < 0 ? 0.1 : 0.2;
                 image_angle -= shot_facing;
             }
+            if (_splash && shot_facing < 0) {
+                solgryn_early_splash(x + irandom(29) - irandom(29), y + irandom(31) - irandom(31));
+            }
             if (solgryn_early_near_edge(0)) {
+                // G800 starts Active 21's non-colliding Disappearing animation.
+                var _decay_sprite = shot_facing < 0 ? spr_solgryn_early_ice_burst_decay_left
+                    : spr_solgryn_early_ice_burst_decay;
+                var _decay = solgryn_early_ordnance(x, y, _decay_sprite, SolgrynEarlyShot.IceBurstDecay,
+                    layer, false, true);
+                _decay.image_angle = image_angle;
+                _decay.image_speed = 0;
+                instance_destroy();
+            }
+            break;
+
+        case SolgrynEarlyShot.IceBurstDecay:
+            image_index = (shot_age * 40 - 1) div 100;
+            if (image_index >= image_number) {
+                instance_destroy();
+            }
+            break;
+
+        case SolgrynEarlyShot.FiniteEffect:
+            image_index = (shot_age * shot_animation_rate - 1) div 100;
+            if (image_index >= image_number) {
                 instance_destroy();
             }
             break;
@@ -194,6 +215,7 @@ function solgryn_early_ordnance_step() {
                 instance_destroy();
                 break;
             }
+            image_index = min(((shot_age + 1) * 25 - 1) div 100, image_number - 1);
             image_angle = shot_phase + 260;
             x = floor(330 + dcos(shot_phase) * 200);
             y = floor(650 - dsin(shot_phase) * 270);
@@ -201,11 +223,19 @@ function solgryn_early_ordnance_step() {
             break;
 
         case SolgrynEarlyShot.Puff:
-            // Fusion plays both appearance and disappearance for Active 32.
-            if (shot_age == 6) {
-                sprite_index = spr_solgryn_early_puff_decay;
-                image_index = 0;
-                shot_duration = 6 + ceil(image_number / 0.35);
+            // Active 32 switches from Appearing to Disappearing after one loop.
+            if (sprite_index == spr_solgryn_early_puff) {
+                image_index = (shot_age * 50 - 1) div 100;
+                if (image_index >= image_number) {
+                    sprite_index = spr_solgryn_early_puff_decay;
+                    image_index = 0;
+                    shot_phase = shot_age;
+                }
+            } else {
+                image_index = ((shot_age - shot_phase) * 35 - 1) div 100;
+                if (image_index >= image_number) {
+                    instance_destroy();
+                }
             }
             break;
 
@@ -295,6 +325,7 @@ function solgryn_early_pursuer_step() {
     }
     if (shot_age >= 200) {
         shot_drift -= 1;
+        image_alpha = max(0, image_alpha - 15 / 128);
     }
     if (y >= 470 && shot_drift > 0) {
         shot_drift = 0;
@@ -315,10 +346,12 @@ function solgryn_early_pursuer_step() {
 
 function solgryn_early_init() {
     solgryn_early_teleport_init();
+    early_advert_rise = 0;
+    early_advert_timer_us = 60000;
     early_burst_clock = 0;
     early_bomb_clock = 0;
-    early_shot_timer = 0;
-    early_cloud_timer = 0;
+    early_shot_timer_us = 100000;
+    early_cloud_timer_us = 400000;
 }
 
 function solgryn_early_hit(_player) {
@@ -346,6 +379,14 @@ function solgryn_early_step(_player, _age) {
         return;
     }
     if (_age < 2080) {
+        // G691 advances the advert with a 60 ms Every condition inside the age gate.
+        if (_age > 100 && _age < 1280) {
+            early_advert_timer_us -= delta_time;
+            if (early_advert_timer_us <= 0) {
+                early_advert_timer_us += 60000;
+                ++early_advert_rise;
+            }
+        }
         return;
     }
 
@@ -359,6 +400,9 @@ function solgryn_early_step(_player, _age) {
                 _right ? spr_solgryn_early_ice_burst_left : spr_solgryn_early_ice_burst,
                 SolgrynEarlyShot.IceBurst, "Attack Effects", true, true);
             _burst.shot_facing = _right ? -1 : 1;
+            with (_burst) {
+                solgryn_early_ordnance_step();
+            }
             audio_play_sound(snd_solgryn_early_shoot, 1, false);
             solgryn_kick(15, 1);
             solgryn_flash();
@@ -406,6 +450,7 @@ function solgryn_early_step(_player, _age) {
             // G722 updates the arc from (530,650) immediately after Create.
             var _head = solgryn_early_ordnance(530, 650, spr_solgryn_early_head,
                 SolgrynEarlyShot.Head, "Attack Effects", true);
+            _head.image_speed = 0;
             _head.image_angle = 260;
             _head.shot_phase = 3;
             audio_play_sound(snd_solgryn_early_eat, 1, false);
@@ -442,12 +487,18 @@ function solgryn_early_step(_player, _age) {
             solgryn_kick(0, 2);
             break;
     }
-    if (_age >= 2480 && _age <= 2600 && ++early_cloud_timer mod 20 == 0) {
-        solgryn_early_finite_effect(x, y, spr_solgryn_early_cloud);
+    if (_age >= 2480 && _age <= 2600) {
+        early_cloud_timer_us -= delta_time;
+        if (early_cloud_timer_us <= 0) {
+            early_cloud_timer_us += 400000;
+            solgryn_early_finite_effect(x, y, spr_solgryn_early_cloud);
+        }
     }
     if (_age >= 2500 && _age <= 2590) {
         solgryn_early_shot(x, y, 200 + dsin(_age * 25) * 60, 6);
-        if (++early_shot_timer mod 5 == 0) {
+        early_shot_timer_us -= delta_time;
+        if (early_shot_timer_us <= 0) {
+            early_shot_timer_us += 100000;
             audio_play_sound(snd_solgryn_early_shoot, 1, false);
         }
     }
@@ -471,6 +522,8 @@ function solgryn_early_step(_player, _age) {
             _oat.image_index = irandom(2);
             var _puff = solgryn_early_ordnance(_point[0], _point[1], spr_solgryn_early_puff,
                 SolgrynEarlyShot.Puff, "Attack Effects", false, true);
+            _puff.image_speed = 0;
+            _puff.shot_age = 2;
             _puff.image_angle = 90;
             _puff.image_xscale = 0.5;
             _puff.image_yscale = 0.5;
@@ -483,12 +536,14 @@ function solgryn_early_step(_player, _age) {
     }
     if (_age == 3000) {
         early_bomb_clock = 0;
-        early_shot_timer = 0;
+        early_shot_timer_us = 100000;
     }
     if (_age > 3000) {
         if (early_burst_clock > -40 && early_burst_clock <= 10) {
             solgryn_early_shot(x, y, 280 + dsin(_age * 25) * 60, 10);
-            if (++early_shot_timer mod 5 == 0) {
+            early_shot_timer_us -= delta_time;
+            if (early_shot_timer_us <= 0) {
+                early_shot_timer_us += 100000;
                 audio_play_sound(snd_solgryn_early_shoot, 1, false);
             }
         }

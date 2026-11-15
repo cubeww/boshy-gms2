@@ -1,5 +1,6 @@
 function prehistorik_exit_setup() {
     prehistorik_boss_threshold = inst_prehistorik_boss_threshold;
+    prehistorik_secret_pipe_steps = -1;
     prehistorik_exit_elevator = inst_prehistorik_exit_elevator;
     prehistorik_exit_elevator_enabled = game_has_item("Metal Gear");
     prehistorik_exit_elevator_velocity = 2;
@@ -47,6 +48,14 @@ function prehistorik_exit_step(_player) {
         return;
     }
 
+    if (prehistorik_secret_pipe_steps >= 0) {
+        // G925–926 change rooms after the 50-step pipe delay.
+        if (++prehistorik_secret_pipe_steps >= 50) {
+            room_goto(rm_secret_1_1);
+        }
+        return;
+    }
+
     if (prehistorik_morshu_steps > 0) {
         ++prehistorik_morshu_steps;
         switch (prehistorik_morshu_steps) {
@@ -83,10 +92,26 @@ function prehistorik_exit_step(_player) {
         return;
     }
 
+    // G924 hides the player as soon as they overlap the pipe mouth.
+    if (_player.boshy_mask_meeting(inst_prehistorik_secret_pipe)) {
+        audio_play_sound(snd_mario_pipe, 1, false);
+        _player.visible = false;
+        _player.input_locked = true;
+        _player.hsp = 0;
+        _player.vsp = 0;
+        prehistorik_secret_pipe_steps = 0;
+        return;
+    }
+
     if (point_in_rectangle(_player.x, _player.y, 3537, 1316, 3609, 1398)
         && game_has_item("Lalalalalala CD") && game_has_item("AwesomeSauce") && game_has_item("Mixer")
         && game_trophy_unlock("World1clear")) {
         prehistorik_show_trophy("WORLD 1 CLEAR!");
+    }
+    // G518 checks deaths counted since the first-world entrance checkpoint.
+    if (_player.x >= 3665 && _player.x < 3725 && _player.y >= 1287 && _player.y < 1399
+        && global.run.world_deaths <= 5 && game_trophy_unlock("World1PROMODE")) {
+        prehistorik_show_trophy("World 1 PRO MODE!");
     }
 
     if (collision_rectangle(_player.bbox_left, _player.bbox_top, _player.bbox_right,

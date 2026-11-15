@@ -12,8 +12,7 @@ show_boss_timer = game_has_item("Timer");
 
 fight_age = -80;
 scene_steps = 0;
-attempt_start_steps = 0;
-attempt_steps = 0;
+timer_reset_second = 0;
 intro_cover = 0;
 facing = 1;
 final_form = false;
@@ -89,5 +88,7 @@ take_player_shot = function(_bullet) {
 mega_man_set_pose(0, 1);
 mega_man_attacks_setup();
 mega_man_victory_setup();
-game_controller.start_stage_music(snd_mega_man_music, false, true);
+if (game_selected_cd() == 0) {
+    game_controller.start_stage_music(snd_mega_man_music, false, true);
+}
 entrance_voice = play_boshy_voice(snd_tutorial_entrance, (44000 + irandom(19999) - irandom(9999)) / 48000);

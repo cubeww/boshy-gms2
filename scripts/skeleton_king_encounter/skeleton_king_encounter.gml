@@ -54,10 +54,26 @@ function skeleton_king_pose_step() {
     king_left_frame = ((scene_steps - 1) div 10) mod sprite_get_number(spr_skeleton_king_arm_left);
 }
 
+function skeleton_king_start_music() {
+    var _boss = instance_find(obj_skeleton_king, 0);
+    if (_boss == noone) {
+        return;
+    }
+
+    // G735 restores the King theme only after the fight starts and no CD is selected.
+    if (_boss.king_age >= 10 && game_selected_cd() == 0) {
+        _boss.game_controller.start_stage_music(snd_skeleton_king_music, false, false, 44100, 0);
+    } else if (_boss.blob_age >= 300) {
+        // G795 restarts the Blob theme after that phase begins.
+        _boss.game_controller.start_stage_music(snd_skeleton_king_blob_music, true, false, 44100, 0);
+    }
+}
+
 function skeleton_king_body_step(_player) {
     if (king_age == 10) {
-        attempt_steps = 0;
-        game_controller.start_stage_music(snd_skeleton_king_music, false, false);
+        // G727 resets the score timer on the room's existing one-second pulse.
+        attempt_start_second = game_controller.frame_seconds;
+        skeleton_king_start_music();
         audio_play_sound(snd_skeleton_king_lair, 1, false);
     }
     if (king_age == 10 || king_age == 35 || king_age == 70 || king_age == 120
@@ -111,13 +127,6 @@ function skeleton_king_body_step(_player) {
     skeleton_king_update_body_mask();
 }
 
-function skeleton_king_stop_music() {
-    if (game_controller.stage_music_instance != -1) {
-        audio_stop_sound(game_controller.stage_music_instance);
-        game_controller.stage_music_instance = -1;
-    }
-}
-
 function skeleton_king_damage(_damage) {
     hit_points = max(0, hit_points - _damage);
     if (hit_flash_age == 0) {
@@ -139,7 +148,7 @@ function skeleton_king_damage(_damage) {
     x = 1758;
     y = 354;
     skeleton_king_update_body_mask();
-    skeleton_king_stop_music();
+    game_controller.stop_stage_music();
     audio_play_sound(snd_skeleton_king_burn, 1, false);
     skeleton_king_attacks_clear();
 }
@@ -249,7 +258,7 @@ function skeleton_king_blob_cue(_age) {
             skeleton_king_start_blob_flyer();
             break;
         case 900:
-            skeleton_king_stop_music();
+            game_controller.stop_stage_music();
             audio_play_sound(snd_skeleton_king_hah, 1, false);
             break;
         case 960:
@@ -262,7 +271,7 @@ function skeleton_king_blob_cue(_age) {
             audio_play_sound(snd_skeleton_king_huh, 1, false);
             break;
         case 1200:
-            var _seconds = attempt_steps div 50;
+            var _seconds = game_controller.frame_seconds - attempt_start_second;
             skeleton_king_record_clear(_seconds);
             skeleton_king_unlock_trophies(_seconds);
             break;

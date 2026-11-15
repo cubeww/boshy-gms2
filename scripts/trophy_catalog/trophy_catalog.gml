@@ -39,7 +39,7 @@ function trophy_catalog() {
         { id: "World11clear", title: "World 11 CLEAR!", description: "Clear world 11!" },
         { id: "AllSecretItems", title: "Secretly Secret!", description: "Get all secret items!" },
         { id: "AllCDs", title: "Music Master!", description: "Get all CD's!" },
-        { id: "World1PROMODE", title: "World 1 PRO MODE", description: "Clear World 1 with less than 5 deaths!" },
+        { id: "World1PROMODE", title: "World 1 PRO MODE", description: "Clear World 1 with 5 deaths or fewer!" },
         { id: "World2PROMODE", title: "World 2 PRO MODE", description: "Clear World 2 with less than 10 deaths!" },
         { id: "World3PROMODE", title: "World 3 PRO MODE", description: "Clear World 3 with less than 15 deaths!" },
         { id: "World4PROMODE", title: "World 4 PRO MODE", description: "Clear World 4 with less than 15 deaths!" },

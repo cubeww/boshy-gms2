@@ -2,7 +2,7 @@
   "$GMSprite": "v2",
   "%Name": "spr_prehistorik_chest_poses",
   "bboxMode": 1,
-  "bbox_bottom": 467,
+  "bbox_bottom": 526,
   "bbox_left": 0,
   "bbox_right": 511,
   "bbox_top": 0,
@@ -22,7 +22,7 @@
   ],
   "gridX": 0,
   "gridY": 0,
-  "height": 468,
+  "height": 527,
   "HTile": false,
   "layers": [
     {

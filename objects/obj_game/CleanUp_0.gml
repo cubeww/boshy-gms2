@@ -1,5 +1,8 @@
 game_profile_save();
 
+if (surface_exists(chest_view_effect_surface)) {
+    surface_free(chest_view_effect_surface);
+}
 if (stage_music_instance != -1) {
     audio_stop_sound(stage_music_instance);
 }

@@ -1,6 +1,7 @@
 ++age_steps;
 shake_steps = max(0, shake_steps - 1);
-var _time_ms = age_steps * 20;
+var _game = stage_controller.game_controller;
+var _time_ms = _game.frame_elapsed_us div 1000;
 
 if (exit_ready) {
     exit;
@@ -9,8 +10,7 @@ if (exit_ready) {
 var _player = instance_find(obj_player, 0);
 
 if (defeated) {
-    ++y;
-    if (y < 580 && age_steps mod 5 == 0) {
+    if (timer_tick(defeat_explosion_timer) && y < 580) {
         if (death_rumble != -1) {
             audio_stop_sound(death_rumble);
         }
@@ -20,12 +20,13 @@ if (defeated) {
         spawn_attack(HelloKittyAttack.Explosion,
             x + irandom(49) - irandom(49), y + irandom(79) - irandom(79), irandom(359));
     }
+    ++y;
     if (y == 400) {
         audio_play_sound(snd_hello_kitty_explosion, 1, false);
     }
     if (y == 590) {
         if (_player != noone) {
-            stage_controller.game_controller.start_stage_music(snd_hello_kitty_victory, false, false);
+            stage_controller.game_controller.start_stage_music(snd_hello_kitty_victory, false, false, 48000);
         }
         spawn_attack(HelloKittyAttack.DeathFlash, x, y, 0, 0, 3);
         spawn_attack(HelloKittyAttack.Explosion,
@@ -44,20 +45,22 @@ if (!combat_active) {
     ++opening_steps;
     if (opening_steps == 80) {
         arena_revealed = true;
-        if (_player != noone) {
-            stage_controller.game_controller.start_stage_music(snd_hello_kitty_entrance, false, false);
+        if (_player != noone && game_selected_cd() == 0) {
+            stage_controller.game_controller.start_stage_music(snd_hello_kitty_entrance, false, false, 48000);
         }
     }
-    if (opening_steps >= 80 && opening_steps < 500) {
-        if ((_time_ms div 50) > ((_time_ms - 20) div 50)) {
+    if (opening_steps >= 80) {
+        if (timer_tick(opening_rise_timer) && opening_steps < 500) {
             --y;
         }
-        image_index = 12 + ((opening_steps div 10) mod 2);
+        if (opening_steps < 500) {
+            image_index = 12 + ((opening_steps div 10) mod 2);
+        }
     }
     if (opening_steps >= 500 && opening_steps < 680) {
         image_angle += 2;
     }
-    if (opening_steps >= 680 && opening_steps < 1500 && opening_steps mod 50 == 0) {
+    if (opening_steps >= 680 && timer_tick(opening_clone_timer) && opening_steps < 1500) {
         spawn_attack(HelloKittyAttack.OpeningClone, 517, -9);
     }
     if (opening_steps >= 700 && opening_steps < 1350) {
@@ -76,6 +79,8 @@ if (!combat_active) {
         opening_steps = 1499;
     }
     if (opening_steps == 1500) {
+        // G672 resets the score timer without resetting the frame's one-second pulse.
+        attempt_start_second = _game.frame_seconds;
         combat_active = true;
         arena_revealed = true;
         x = 540;
@@ -89,7 +94,7 @@ if (!combat_active) {
                 instance_destroy();
             }
         }
-        if (_player != noone) {
+        if (_player != noone && game_selected_cd() == 0) {
             stage_controller.game_controller.start_stage_music(snd_hello_kitty_music, false);
             audio_play_sound(snd_hello_kitty_roar, 1, false);
         }
@@ -97,7 +102,6 @@ if (!combat_active) {
     exit;
 }
 
-++attempt_steps;
 attack_steps = (attack_steps + 1) mod 1800;
 image_index = 16 + ((age_steps div 10) mod 2);
 
@@ -107,7 +111,7 @@ if (attack_steps < 400 || attack_steps >= 600) {
     y += sign(_player.y - y) * floor(abs(_player.y - y) * 0.05);
 }
 
-if (attack_steps < 400 && age_steps mod 50 == 0 && _player != noone) {
+if (_game.frame_second_tick && attack_steps < 400 && _player != noone) {
     var _shot_x = x - 20;
     var _shot_y = y - 5;
     var _aim = point_direction(_shot_x, _shot_y, _player.x, _player.y);
@@ -128,10 +132,10 @@ switch (attack_steps) {
         break;
 }
 
-if (attack_steps >= 950 && attack_steps < 1300 && age_steps mod 40 == 0) {
+if (attack_steps >= 950 && timer_tick(falling_clone_timer) && attack_steps < 1300) {
     spawn_attack(HelloKittyAttack.FallingClone, 20 + irandom(299), -38);
 }
-if (attack_steps >= 1300 && attack_steps < 1600 && age_steps mod 4 == 0) {
+if (attack_steps >= 1300 && timer_tick(spiral_heart_timer) && attack_steps < 1600) {
     var _angle = 180 + dsin(_time_ms / 5) * 45 + irandom(4) - irandom(4);
     spawn_attack(HelloKittyAttack.SpiralHeart, 552, 249, _angle, 2);
 }

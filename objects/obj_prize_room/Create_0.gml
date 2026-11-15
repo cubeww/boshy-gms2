@@ -1,9 +1,5 @@
 game_controller = instance_find(obj_game, 0);
-stage_steps = 0;
 page_left = 0;
-view_width = 640;
-view_center_x = 320;
-view_center_y = 240;
 portal_steps = -1;
 portal_sound = -1;
 portal_touching = false;

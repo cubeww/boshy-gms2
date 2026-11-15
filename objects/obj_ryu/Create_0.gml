@@ -8,7 +8,7 @@ max_health = _health_by_difficulty[difficulty];
 hit_points = max_health;
 scene_steps = 0;
 fight_age = -1;
-attempt_steps = 0;
+attempt_start_second = -1;
 hit_flash_age = -1;
 shake_strength = 0;
 blur_strength = 0;
@@ -65,19 +65,21 @@ ryu_update_view = function(_player) {
         view_center_y = 240;
     }
 
-    var _target_width = 640;
-    var _target_x = _page_left + 320;
-    var _target_y = 240;
-    if (prehistorik_pickup_slot >= 0) {
-        _target_width -= min(prehistorik_pickup_age, 200) * 2;
-        _target_x = _player.x;
-        _target_y = _player.y;
-    } else if (dance_active) {
-        // The viewport follows the hidden player, while Player 2 dances independently.
-        _target_width = 180;
-        _target_x = 1600;
-        _target_y = 380;
+    var _pickup_age = prehistorik_pickup_slot >= 0 ? prehistorik_pickup_age : -1;
+    var _chest_view = _pickup_age >= 0 || !is_undefined(game_controller.chest_view_crop);
+    // The dance uses its own camera, after the costume chest has finished its pullback.
+    if (_chest_view) {
+        camera_set_view_size(view_camera[0], 640, 480);
+        camera_set_view_pos(view_camera[0], _page_left, 0);
+        chest_view_update(game_controller, _player, _pickup_age);
+        view_width = 640;
+        view_center_x = _page_left + 320;
+        view_center_y = 240;
+        return;
     }
+    var _target_width = dance_active ? 180 : 640;
+    var _target_x = dance_active ? 1600 : _page_left + 320;
+    var _target_y = dance_active ? 380 : 240;
     view_width = lerp(view_width, _target_width, 0.2);
     view_center_x = lerp(view_center_x, _target_x, 0.2);
     view_center_y = lerp(view_center_y, _target_y, 0.2);
@@ -94,6 +96,7 @@ ryu_update_view = function(_player) {
     camera_set_view_size(_camera, _width, _height);
     camera_set_view_pos(_camera, round(view_center_x - _width / 2) + _shake_x,
         round(view_center_y - _height / 2) + _shake_y);
+    chest_view_update(game_controller, _player, -1);
 };
 
 ryu_set_pose = function(_animation, _facing = -1, _restart = false) {
@@ -140,8 +143,13 @@ take_player_shot = function(_bullet) {
         return false;
     }
 
-    --hit_points;
-    audio_play_sound(snd_hello_kitty_hit, 1, false);
+    take_hit(1);
+    return true;
+};
+
+take_hit = function(_damage, _hit_sound = snd_hello_kitty_hit) {
+    hit_points = max(0, hit_points - _damage);
+    audio_play_sound(_hit_sound, 1, false);
     if (hit_flash_age < 0) {
         hit_flash_age = 0;
     }
@@ -149,11 +157,10 @@ take_player_shot = function(_bullet) {
         defeated = true;
         ryu_set_pose(17, 1);
         image_angle = 0;
-        audio_stop_sound(game_controller.stage_music_instance);
-        game_controller.stage_music_instance = -1;
+        game_controller.stop_stage_music();
         audio_play_sound(snd_ryu_defeat, 1, false);
 
-        var _seconds = attempt_steps div 50;
+        var _seconds = game_controller.frame_seconds - attempt_start_second;
         var _progress = game_current_progress();
         if (_seconds < _progress.ryu_best_time) {
             _progress.ryu_best_time = _seconds;
@@ -174,7 +181,6 @@ take_player_shot = function(_bullet) {
         }
         game_profile_save();
     }
-    return true;
 };
 
 ryu_attacks_setup();

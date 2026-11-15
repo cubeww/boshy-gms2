@@ -4,6 +4,7 @@ portal_age = 0;
 portal_audio = -1;
 boss_exit_age = -1;
 boss_exit_rearm = true;
+boss_exit_music = -1;
 
 reset_portal = function() {
     portal.image_index = 0;
@@ -34,9 +35,12 @@ advance_route = function(_player) {
         // G983–984 go to the next frame after 135 steps or a skip.
         ++boss_exit_age;
         if (boss_exit_age >= 135 || keyboard_check_pressed(ord("S"))) {
-            // Keep Fusion's channel 2 playing through the frame change.
-            global.run.missingno_music_handoff = game_controller.stage_music_instance;
-            game_controller.stage_music_instance = -1;
+            // G982's Megamix carries into the boss arena if it is still playing.
+            if (boss_exit_music != -1 && game_controller.stage_music_instance == boss_exit_music
+                && audio_is_playing(boss_exit_music)) {
+                global.run.missingno_music_handoff = boss_exit_music;
+                game_controller.stage_music_instance = -1;
+            }
             room_goto(rm_missingno);
         }
         return;
@@ -111,6 +115,7 @@ advance_route = function(_player) {
             _player.hsp = 0;
             _player.vsp = 0;
             _stage.set_scene_track(snd_ninja_gaiden_boss_exit_music);
+            other.boss_exit_music = other.game_controller.stage_music_instance;
         }
         player_touching = _overlap;
     }

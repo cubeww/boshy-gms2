@@ -1,5 +1,8 @@
 travel_speed = 8.75;
 age = 0;
+if (!variable_instance_exists(id, "custom_bullet")) {
+    custom_bullet = undefined;
+}
 reflected = false;
 reflection_angle = 0;
 image_speed = 0;

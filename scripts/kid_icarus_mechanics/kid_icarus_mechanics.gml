@@ -111,8 +111,8 @@ function kid_icarus_sliding_blocks_step(_player) {
     var _player_y = 0;
     if (_can_push) {
         var _keys = global.settings.keys;
-        var _right = keyboard_check(_keys.right);
-        var _left = keyboard_check(_keys.left);
+        var _right = keyboard_check(game_horizontal_key(_keys, true));
+        var _left = keyboard_check(game_horizontal_key(_keys, false));
         _horizontal = (_right || _left) ? _right - _left : sign(_player.hsp);
         _player_x = floor(_player.x);
         _player_y = floor(_player.y);

@@ -4,7 +4,7 @@ function shang_tsung_victory_setup() {
     victory_shade_ink = 128;
     victory_trophy_title = "";
     victory_trophy_age = -1;
-    victory_clear_pending = false;
+    victory_clear_at_us = -1;
     victory_hide_boss = false;
     victory_audio = [];
 }
@@ -91,7 +91,7 @@ function shang_tsung_victory_fire(_player) {
     _player.refresh_collision_probes();
 }
 
-function shang_tsung_victory_step(_player, _attempt_steps) {
+function shang_tsung_victory_step(_player, _seconds) {
     if (_player == noone || _player.dead || victory_age < 0 || victory_age >= 600) {
         return;
     }
@@ -99,9 +99,9 @@ function shang_tsung_victory_step(_player, _attempt_steps) {
     if (victory_trophy_age >= 0 && ++victory_trophy_age >= 226) {
         victory_trophy_age = -1;
     }
-    // G577 announces the clear on the next two-second room timer pulse.
-    if (victory_clear_pending && scene_steps mod 100 == 0) {
-        victory_clear_pending = false;
+    // G577 evaluates its two-second timer only after the clear is pending.
+    if (victory_clear_at_us >= 0 && game_controller.frame_elapsed_us >= victory_clear_at_us) {
+        victory_clear_at_us = -1;
         shang_tsung_victory_show_trophy("FATALITY...");
     }
 
@@ -135,17 +135,18 @@ function shang_tsung_victory_step(_player, _attempt_steps) {
 
         case 200:
             shang_tsung_victory_play_sound(snd_shang_tsung_fatality_scream);
-            victory_clear_pending = game_trophy_unlock("ShangTsung");
+            if (game_trophy_unlock("ShangTsung")) {
+                victory_clear_at_us = game_controller.frame_elapsed_us + 2000000;
+            }
             break;
 
         case 201:
-            if (_attempt_steps div 50 < 64 && game_trophy_unlock("ShangTsungSpeed")) {
+            if (_seconds < 64 && game_trophy_unlock("ShangTsungSpeed")) {
                 shang_tsung_victory_show_trophy("SHANG TSUNG\nSPEEDRUN!");
             }
             break;
 
         case 301:
-            var _seconds = _attempt_steps div 50;
             var _progress = game_current_progress();
             if (_seconds < _progress.shang_tsung_best_time) {
                 _progress.shang_tsung_best_time = _seconds;

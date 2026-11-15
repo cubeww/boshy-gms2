@@ -1,0 +1,10 @@
+{
+  "$GMScript":"v1",
+  "%Name":"collectible_music",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"collectible_music",
+  "parent":{"name":"Game","path":"folders/Shared/Game.yy",},
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}

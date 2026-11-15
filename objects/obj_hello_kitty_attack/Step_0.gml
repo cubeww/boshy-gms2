@@ -9,7 +9,8 @@ switch (attack_kind) {
             vertical_speed = -5;
             horizontal_speed = irandom(1) - irandom(1);
         }
-        image_angle = dsin(boss.age_steps * 20 / 3) * 25;
+        var _time_ms = boss.stage_controller.game_controller.frame_elapsed_us div 1000;
+        image_angle = dsin(_time_ms / 3) * 25;
         break;
     case HelloKittyAttack.FallingClone:
         x += horizontal_speed;
@@ -25,9 +26,12 @@ switch (attack_kind) {
         x += horizontal_speed;
         y += vertical_speed;
         image_index = age mod sprite_get_number(sprite_index);
-        if (attack_kind == HelloKittyAttack.AimedHeart && boss.age_steps mod 5 == 0) {
-            var _trail_angle = heading + 180 + irandom(89) - irandom(89);
-            boss.spawn_attack(HelloKittyAttack.HeartTrail, x, y, _trail_angle, 2);
+        if (attack_kind == HelloKittyAttack.AimedHeart) {
+            var _elapsed = boss.stage_controller.game_controller.frame_elapsed_us;
+            if ((_elapsed div 100000) > ((_elapsed - delta_time) div 100000)) {
+                var _trail_angle = heading + 180 + irandom(89) - irandom(89);
+                boss.spawn_attack(HelloKittyAttack.HeartTrail, x, y, _trail_angle, 2);
+            }
         }
         break;
     case HelloKittyAttack.Laser:

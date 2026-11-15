@@ -8,7 +8,7 @@ function sanicz_victory_setup() {
     victory_trophy_age = -1;
 }
 
-function sanicz_victory_begin(_attempt_steps) {
+function sanicz_victory_begin(_seconds) {
     if (victory_age >= 0) {
         return;
     }
@@ -26,7 +26,6 @@ function sanicz_victory_begin(_attempt_steps) {
     audio_play_sound(snd_king_dedede_explosion, 1, false);
     audio_play_sound(snd_sanicz_voice_31, 1, false);
 
-    var _seconds = _attempt_steps div 50;
     var _progress = game_current_progress();
     if (_seconds < _progress.sonic_best_time) {
         _progress.sonic_best_time = _seconds;
@@ -88,7 +87,8 @@ function sanicz_victory_step() {
     if (victory_speed_pending) {
         victory_speed_pending = false;
         sanicz_victory_show_trophy("Sonic Speedrun!");
-    } else if (victory_trophy_pending && victory_trophy_age < 0 && scene_steps mod 100 == 0) {
+    } else if (victory_trophy_pending && victory_trophy_age < 0
+        && game_controller.frame_second_tick && game_controller.frame_seconds mod 2 == 0) {
         victory_trophy_pending = false;
         sanicz_victory_show_trophy("You're too fast!");
     }

@@ -52,10 +52,10 @@ var _next = keyboard_check_pressed(vk_right) || keyboard_check_pressed(vk_down);
 
 var _mouse_x = -1000;
 var _mouse_y = -1000;
-var _viewport = game_controller.get_viewport_rectangle();
-if (!is_undefined(_viewport)) {
-    _mouse_x = (window_mouse_get_x() - _viewport.left) * 640 / _viewport.width;
-    _mouse_y = (window_mouse_get_y() - _viewport.top) * 480 / _viewport.height;
+var _pointer = game_controller.get_viewport_pointer(false);
+if (!is_undefined(_pointer)) {
+    _mouse_x = _pointer.x * 640;
+    _mouse_y = _pointer.y * 480;
 }
 var _click = mouse_check_button_pressed(mb_left);
 

@@ -1,5 +1,6 @@
 function game_key_is_bound(_keys, _key) {
-    return _keys.left == _key || _keys.right == _key || _keys.jump == _key || _keys.shoot == _key || _keys.restart == _key;
+    return _keys.left == _key || _keys.right == _key || _keys.up == _key || _keys.down == _key
+        || _keys.jump == _key || _keys.shoot == _key || _keys.restart == _key;
 }
 
 function game_settings_key_allowed(_key) {
@@ -74,6 +75,18 @@ function game_settings_option_value(_setting) {
     return _value;
 }
 
+function game_view_mirrored() {
+    // The original Viewport object is absent from these frames.
+    return global.settings.mirror && room != rm_intro && room != rm_options && room != rm_trophies
+        && room != rm_dresser && room != rm_final_path && room != rm_solgryn_ending && room != rm_credits;
+}
+
+function game_horizontal_key(_keys, _right, _reverse = false) {
+    // Fusion's Control X swaps the bindings for the whole application.
+    var _reverse_input = global.settings.mirror != _reverse;
+    return _right != _reverse_input ? _keys.right : _keys.left;
+}
+
 function game_settings_load() {
     var _settings = {
         music_volume: 100,
@@ -83,14 +96,18 @@ function game_settings_load() {
         special_shot_graphics: true,
         character_walk_sound: true,
         blood_intensity: 50,
+        mirror: false,
         restart_music: true,
         show_fps: false,
         show_deaths: false,
         auto_fire: undefined,
         display_mode: 1,
+        frame_rate: 50,
         keys: {
             left: vk_left,
             right: vk_right,
+            up: vk_up,
+            down: vk_down,
             jump: ord("Z"),
             shoot: ord("X"),
             restart: ord("R")
@@ -109,6 +126,7 @@ function game_settings_load() {
     _settings.special_shot_graphics = game_settings_read_integer("Options", "SpecialShotGraphics", 1) != 0;
     _settings.character_walk_sound = game_settings_read_integer("Options", "DigDugWalkSound", 1) != 0;
     _settings.blood_intensity = clamp(game_settings_read_integer("Options", "BloodIntensity", _settings.blood_intensity), 0, 200);
+    _settings.mirror = game_settings_read_integer("Options", "Mirror", 0) == 1;
     _settings.restart_music = game_settings_read_integer("Options", "MusicRestart", 1) != 0;
     _settings.show_fps = game_settings_read_integer("Options", "FPS", 0) == 1;
     _settings.show_deaths = game_settings_read_integer("Options", "ShowDeaths", 0) == 1;
@@ -120,20 +138,20 @@ function game_settings_load() {
     if (_display_mode >= 0 && _display_mode <= 3) {
         _settings.display_mode = _display_mode;
     }
+    _settings.frame_rate = clamp(game_settings_read_integer("Options", "FrameRate", 50), 50, 1000);
 
     var _key_names = struct_get_names(_settings.keys);
     var _loaded_keys = {};
     var _assigned_keys = [];
-    var _displaced_actions = [];
 
     for (var _i = 0; _i < array_length(_key_names); ++_i) {
         var _name = _key_names[_i];
-        var _key = ini_key_exists("Controls", _name)
-            ? game_settings_read_integer("Controls", _name, vk_nokey)
-            : struct_get(_settings.keys, _name);
+        if (!ini_key_exists("Controls", _name)) {
+            continue;
+        }
+        var _key = game_settings_read_integer("Controls", _name, vk_nokey);
         if ((_key == vk_tab || _key == vk_f3 || _key == vk_f5 || _key == ord("G"))
             && !array_contains(_assigned_keys, _key)) {
-            array_push(_displaced_actions, _name);
             array_push(_assigned_keys, _key);
             continue;
         }
@@ -148,21 +166,25 @@ function game_settings_load() {
     }
 
     ini_close();
-    // Keep other saved bindings when a formerly bindable key becomes a shortcut.
-    for (var _i = 0; _i < array_length(_displaced_actions); ++_i) {
-        var _action = _displaced_actions[_i];
-        var _replacement = struct_get(_settings.keys, _action);
-        if (array_contains(_assigned_keys, _replacement)) {
-            for (var _j = 0; _j < array_length(_key_names); ++_j) {
-                var _default_key = struct_get(_settings.keys, _key_names[_j]);
-                if (!array_contains(_assigned_keys, _default_key)) {
-                    _replacement = _default_key;
-                    break;
-                }
+    // Older settings may already use Up or Down for another action.
+    var _available_defaults = [];
+    var _displaced_actions = [];
+    for (var _i = 0; _i < array_length(_key_names); ++_i) {
+        var _name = _key_names[_i];
+        var _default_key = struct_get(_settings.keys, _name);
+        var _taken = array_contains(_assigned_keys, _default_key);
+        if (struct_exists(_loaded_keys, _name)) {
+            if (!_taken) {
+                array_push(_available_defaults, _default_key);
             }
+        } else if (_taken) {
+            array_push(_displaced_actions, _name);
+        } else {
+            struct_set(_loaded_keys, _name, _default_key);
         }
-        struct_set(_loaded_keys, _action, _replacement);
-        array_push(_assigned_keys, _replacement);
+    }
+    for (var _i = 0; _i < array_length(_displaced_actions); ++_i) {
+        struct_set(_loaded_keys, _displaced_actions[_i], _available_defaults[_i]);
     }
 
     _settings.keys = _loaded_keys;
@@ -179,6 +201,7 @@ function game_settings_save() {
     ini_write_string("Options", "SpecialShotGraphics", _settings.special_shot_graphics ? "1" : "0");
     ini_write_string("Options", "DigDugWalkSound", _settings.character_walk_sound ? "1" : "0");
     ini_write_string("Options", "BloodIntensity", string_format(_settings.blood_intensity, 0, 0));
+    ini_write_string("Options", "Mirror", _settings.mirror ? "1" : "0");
     ini_write_string("Options", "MusicRestart", _settings.restart_music ? "1" : "0");
     ini_write_string("Options", "FPS", _settings.show_fps ? "1" : "0");
     ini_write_string("Options", "ShowDeaths", _settings.show_deaths ? "1" : "0");
@@ -186,6 +209,7 @@ function game_settings_save() {
         ini_write_string("Options", "AutoFire", _settings.auto_fire ? "1" : "0");
     }
     ini_write_string("Options", "DisplayMode", string_format(_settings.display_mode, 0, 0));
+    ini_write_string("Options", "FrameRate", string_format(_settings.frame_rate, 0, 0));
 
     var _key_names = struct_get_names(_settings.keys);
     for (var _i = 0; _i < array_length(_key_names); ++_i) {

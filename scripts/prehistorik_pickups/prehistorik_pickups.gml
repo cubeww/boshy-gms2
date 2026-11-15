@@ -37,6 +37,9 @@ function prehistorik_pickups_step(_player) {
 
     if (prehistorik_pickup_slot >= 0) {
         if (_player == noone || _player.dead) {
+            if (instance_exists(prehistorik_pickup_player)) {
+                prehistorik_chest_pose_step(prehistorik_pickup_player, -1);
+            }
             prehistorik_pickups_cleanup();
             if (prehistorik_pickup_music != -1) {
                 audio_resume_sound(prehistorik_pickup_music);
@@ -48,6 +51,7 @@ function prehistorik_pickups_step(_player) {
         }
 
         ++prehistorik_pickup_age;
+        prehistorik_chest_pose_step(_player, prehistorik_pickup_age < 360 ? prehistorik_pickup_age : -1);
         var _entry = prehistorik_pickup_entries[prehistorik_pickup_slot];
         if (prehistorik_pickup_age == 250) {
             if (_entry.unlock_key == "") {
@@ -109,6 +113,7 @@ function prehistorik_pickups_step(_player) {
         prehistorik_pickup_slot = _i;
         prehistorik_pickup_age = 0;
         prehistorik_pickup_player = _player;
+        prehistorik_chest_pose_step(_player, 0);
         _player.visible = false;
         _player.input_locked = true;
         _player.hsp = 0;
@@ -149,20 +154,57 @@ function prehistorik_pickups_draw() {
         draw_sprite(_sprite, _frame, _player.x, _player.y - 3);
     }
 
-    // Fusion stops the opening animation at age 200 and holds its last pose until the reveal.
-    var _pose_age = _reveal ? prehistorik_pickup_age - 250 : min(prehistorik_pickup_age, 199);
-    prehistorik_draw_chest_pose(_player, global.profile.character_id, _reveal, _pose_age);
+    prehistorik_draw_chest_pose(_player);
 }
 
-function prehistorik_pickups_draw_hud() {
-    if (prehistorik_pickup_message_age < 0) {
+function chest_draw_overlay(_draw) {
+    var _overlay = method(id, _draw);
+    var _game = instance_find(obj_game, 0);
+    // The native message and trophy layer is above the Viewport sprite.
+    if (_game != noone && (!is_undefined(_game.chest_view_crop) || game_view_mirrored())) {
+        array_push(_game.chest_view_overlays, _overlay);
         return;
     }
 
     var _camera = camera_get_active();
-    var _left = _camera == -1 ? 0 : camera_get_view_x(_camera);
-    var _top = _camera == -1 ? 0 : camera_get_view_y(_camera);
-    var _scale = _camera == -1 ? 1 : camera_get_view_width(_camera) / 640;
+    _overlay({
+        left: _camera == -1 ? 0 : camera_get_view_x(_camera),
+        top: _camera == -1 ? 0 : camera_get_view_y(_camera),
+        scale_x: _camera == -1 ? 1 : camera_get_view_width(_camera) / 640,
+        scale_y: _camera == -1 ? 1 : camera_get_view_height(_camera) / 480
+    });
+}
+
+function chest_draw_overlays(_game, _viewport) {
+    var _overlays = _game.chest_view_overlays;
+    var _count = array_length(_overlays);
+    if (_count == 0) {
+        return;
+    }
+
+    _game.chest_view_overlays = [];
+    var _view = {
+        left: _viewport.left,
+        top: _viewport.top,
+        scale_x: _viewport.width / 640,
+        scale_y: _viewport.height / 480
+    };
+    for (var _i = 0; _i < _count; ++_i) {
+        var _draw = _overlays[_i];
+        _draw(_view);
+    }
+}
+
+function prehistorik_pickups_draw_hud() {
+    if (prehistorik_pickup_message_age >= 0) {
+        chest_draw_overlay(prehistorik_pickups_draw_message);
+    }
+}
+
+function prehistorik_pickups_draw_message(_view) {
+    var _left = _view.left;
+    var _top = _view.top;
+    var _scale = _view.scale_x;
     draw_sprite_ext(spr_prehistorik_pickup_message, 0, _left + 5 * _scale, _top + 5 * _scale,
         _scale, _scale, 0, c_white, 1);
 

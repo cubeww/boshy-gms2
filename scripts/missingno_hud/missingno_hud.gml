@@ -42,7 +42,7 @@ function missingno_draw_hud() {
         draw_boshy_text(_health, 639 - string_length(_health) * 8, 16);
     }
     if (show_boss_timer) {
-        var _seconds = timer_reset_second < 0 ? scene_steps div 50 : attempt_steps div 50;
+        var _seconds = game_controller.frame_seconds - timer_reset_second;
         var _time = string(_seconds) + " seconds";
         draw_boshy_text(_time, 639 - string_length(_time) * 8, show_boss_health ? 28 : 16);
     }

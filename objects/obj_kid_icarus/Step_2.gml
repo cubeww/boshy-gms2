@@ -1,5 +1,5 @@
 ++stage_steps;
-++global.run.boss_entry_steps;
+global.run.boss_entry_seconds += game_controller.frame_second_tick;
 var _player = instance_find(obj_player, 0);
 kid_icarus_mechanics_step(_player, stage_steps);
 _player = instance_find(obj_player, 0);
@@ -15,6 +15,8 @@ if (_rewards != noone) {
 
 if (_player != noone) {
     update_view(_player, _pickup_age);
+} else {
+    chest_view_update(game_controller, noone, -1);
 }
 kid_icarus_enemies_step(_player, stage_steps);
 _player = instance_find(obj_player, 0);
@@ -67,8 +69,6 @@ if (portal != noone) {
 if (_player.input_locked) {
     exit;
 }
-update_cd();
-
 with (obj_kid_icarus_teleporter) {
     var _overlap = _player.boshy_mask_meeting(id);
     if (_overlap && !player_touching && other.portal == noone) {

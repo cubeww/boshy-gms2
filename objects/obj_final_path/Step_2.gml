@@ -42,10 +42,6 @@ if (portal_age >= 0) {
 if (_player.input_locked) {
     exit;
 }
-if (ninja_gaiden_toggle_cd()) {
-    play_stage_track();
-}
-
 var _touching = _player.boshy_mask_meeting(_portal);
 if (_touching && !_portal.player_touching) {
     portal_age = 0;

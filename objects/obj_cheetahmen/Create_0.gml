@@ -1,9 +1,6 @@
 game_controller = instance_find(obj_game, 0);
 page_left = 0;
 page_top = 0;
-view_width = 640;
-view_center_x = 320;
-view_center_y = 240;
 trophy_title = "";
 trophy_steps = -1;
 pipe_steps = -1;
@@ -28,31 +25,13 @@ cheetahmen_show_trophy = function(_title) {
 
 update_view = function(_player) {
     if (_player != noone) {
-        var _left = clamp(floor(_player.x / 640) * 640, 0, room_width - 640);
-        var _top = clamp(floor(_player.y / 480) * 480, 0, room_height - 480);
-        if (page_left != _left || page_top != _top) {
-            page_left = _left;
-            page_top = _top;
-            view_width = 640;
-            view_center_x = _left + 320;
-            view_center_y = _top + 240;
-        }
-        if (prehistorik_pickup_slot >= 0) {
-            view_width = lerp(view_width, 640 - min(prehistorik_pickup_age, 200) * 2, 0.2);
-            view_center_x = lerp(view_center_x, _player.x, 0.2);
-            view_center_y = lerp(view_center_y, _player.y + 5, 0.2);
-        } else {
-            view_width = 640;
-            view_center_x = _left + 320;
-            view_center_y = _top + 240;
-        }
+        page_left = clamp(floor(_player.x / 640) * 640, 0, room_width - 640);
+        page_top = clamp(floor(_player.y / 480) * 480, 0, room_height - 480);
     }
-
-    var _width = round(view_width / 4) * 4;
-    var _height = _width * 3 / 4;
-    camera_set_view_size(view_camera[0], _width, _height);
-    camera_set_view_pos(view_camera[0], clamp(round(view_center_x - _width / 2), 0, room_width - _width),
-        clamp(round(view_center_y - _height / 2), 0, room_height - _height));
+    camera_set_view_size(view_camera[0], 640, 480);
+    camera_set_view_pos(view_camera[0], page_left, page_top);
+    var _pickup_age = prehistorik_pickup_slot >= 0 ? prehistorik_pickup_age : -1;
+    chest_view_update(game_controller, _player, _pickup_age);
 };
 
 cheetahmen_early_setup();

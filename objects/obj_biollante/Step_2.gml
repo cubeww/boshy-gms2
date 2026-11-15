@@ -6,9 +6,6 @@ if (_player == noone) {
 if (!victory_hide_boss) {
     biollante_advance_pose();
 }
-if (fight_age >= 830) {
-    ++attempt_steps;
-}
 if (rotation_step == 0) {
     view_rotation = rotation_target;
 }
@@ -20,7 +17,7 @@ if (victory_age < 0) {
     if (fight_age == 150) {
         audio_play_sound(snd_biollante_roar, 1, false);
     }
-    if (fight_age == 250) {
+    if (fight_age == 250 && !game_controller.stage_music_is_playing()) {
         biollante_start_music();
     }
     if (fight_age >= 300 && fight_age < 700) {
@@ -36,6 +33,9 @@ if (victory_age < 0) {
         fight_age = 830;
         biollante_set_pose(spr_biollante_anim_14_left);
         intro_flash_steps = 13;
+    }
+    if (fight_age == 830) {
+        timer_reset_second = game_controller.frame_seconds;
     }
     if (fight_age == 830 || fight_age == 1500) {
         audio_play_sound(snd_biollante_roar, 1, false);

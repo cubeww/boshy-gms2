@@ -17,12 +17,6 @@ advance_rewards = function(_player) {
         trophy_steps = -1;
     }
     prehistorik_pickups_step(_player);
-    if (_player != noone && prehistorik_pickup_slot >= 0) {
-        // G597 holds the player under the chest during the reveal.
-        _player.visible = true;
-        _player.pose = PlayerPose.Idle;
-        _player.pose_frame = 0;
-    }
 
     if (instance_number(obj_bullet) >= 5 && game_trophy_unlock("TriggerFinger")) {
         show_trophy("TRIGGER FINGER!!");

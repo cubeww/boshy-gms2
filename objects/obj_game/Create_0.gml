@@ -2,6 +2,16 @@ restore_saved_display = !variable_global_exists("settings");
 if (restore_saved_display) {
     global.settings = game_settings_load();
 }
+// Fusion applies the saved rate at the start of each frame.
+game_set_speed(global.settings.frame_rate, gamespeed_fps);
+frame_elapsed_us = 0;
+frame_seconds = 0;
+frame_second_tick = false;
+spike_fire_wait_us = 50000;
+spike_glow_wait_us = 30000;
+if (!variable_global_exists("spike_held_steps")) {
+    global.spike_held_steps = 0;
+}
 if (!variable_global_exists("profile")) {
     global.profile = game_profile_load();
 }
@@ -15,6 +25,9 @@ if (!variable_global_exists("debug_invincible")) {
 gameplay_room = room != rm_intro && room != rm_title && room != rm_options && room != rm_trophies
     && room != rm_dresser && room != rm_solgryn_ending;
 campaign_slot = game_campaign_active_slot();
+achievement_notifications = [];
+achievement_notification_age = 0;
+achievement_check_steps = 0;
 var _travel = undefined;
 if (variable_global_exists("teleporter_travel") && !is_undefined(global.teleporter_travel)) {
     if (global.teleporter_travel.destination == room) {
@@ -30,9 +43,12 @@ if (!variable_global_exists("run") || (gameplay_room && (global.run.room_id != r
     var _carry_ryu_entry = room == rm_ryu && _previous_room == rm_king_dedede;
     _arrived_from_vvvvvv = room == rm_biollante && _previous_room == rm_vvvvvv;
     var _desert_route = room == rm_desert || room == rm_desert_secret || room == rm_final_path;
+    var _secret_1_1_entry = room == rm_secret_1_1 && _previous_room == rm_prehistorik;
     var _tutorial_warp_exit = room == rm_prehistorik && _previous_room == rm_tutorial
         && struct_exists(_previous_run, "teleporter_entry") && !_previous_run.has_checkpoint;
-    var _defer_checkpoint = room == rm_hello_kitty || room == rm_green_greens || room == rm_king_dedede
+    var _defer_checkpoint = room == rm_secret_1_1 || room == rm_secret_jtv || room == rm_pokemon_puzzle || room == rm_wow
+        || room == rm_cheetah_men
+        || room == rm_hello_kitty || room == rm_green_greens || room == rm_king_dedede
         || room == rm_ryu || room == rm_cheetahmen || room == rm_gastly || room == rm_mario
         || room == rm_vvvvvv || room == rm_biollante || room == rm_wario || room == rm_sanicz
         || room == rm_castlevania || room == rm_gradius || room == rm_skeleton_king || room == rm_milon
@@ -42,6 +58,7 @@ if (!variable_global_exists("run") || (gameplay_room && (global.run.room_id != r
         || _via_teleporter || _tutorial_warp_exit
         || (room == rm_prehistorik && _previous_room == rm_milon);
     var _continues_without_checkpoint = (_via_teleporter && !is_undefined(_previous_run)) || _tutorial_warp_exit
+        || _secret_1_1_entry
         || (room == rm_hello_kitty && _previous_room == rm_prehistorik)
         || (room == rm_green_greens && _previous_room == rm_hello_kitty)
         || (room == rm_king_dedede && _previous_room == rm_green_greens) || _carry_ryu_entry
@@ -71,7 +88,7 @@ if (!variable_global_exists("run") || (gameplay_room && (global.run.room_id != r
         _restart_run = _previous_run.has_checkpoint ? _previous_run : _previous_run.restart_run;
         // A course entrance is also a restart point before its first save block.
         if (is_undefined(_restart_run) && _previous_room != rm_gastly
-            && (room == rm_hello_kitty || room == rm_king_dedede
+            && (room == rm_hello_kitty || room == rm_king_dedede || _secret_1_1_entry
             || room == rm_gastly || room == rm_mario || room == rm_vvvvvv || room == rm_biollante || room == rm_wario
             || room == rm_sanicz || room == rm_gradius || room == rm_skeleton_king || room == rm_milon
             || room == rm_milon_depths || room == rm_mega_man || room == rm_mega_man_world || room == rm_shang_tsung
@@ -106,7 +123,7 @@ if (!variable_global_exists("run") || (gameplay_room && (global.run.room_id != r
         desert_snake: false,
         desert_switch: is_undefined(campaign_slot) ? false : campaign_slot.desert_switch,
         desert_checkpoint_switch: is_undefined(campaign_slot) ? false : campaign_slot.desert_switch,
-        boss_entry_steps: 0,
+        boss_entry_seconds: 0,
         music_position: 0,
         ryu_entry_y: _carry_ryu_entry ? _previous_run.ryu_entry_y : undefined,
         gastly_return_run: room == rm_gastly && _previous_room == rm_cheetahmen ? _previous_run : undefined,
@@ -116,6 +133,9 @@ if (!variable_global_exists("run") || (gameplay_room && (global.run.room_id != r
     if (_via_teleporter) {
         global.run.teleporter_entry = _travel.position;
         global.run.boss_rush = _travel.boss_rush_key;
+    }
+    if (room == rm_cheetah_men && _previous_room == rm_wow && struct_exists(_previous_run, "wow_timer_seconds")) {
+        global.run.wow_timer_seconds = _previous_run.wow_timer_seconds;
     }
     if (_desert_route && _continues_without_checkpoint) {
         global.run.desert_checkpoint_switch = _previous_run.desert_checkpoint_switch;
@@ -129,38 +149,19 @@ if (!variable_global_exists("run") || (gameplay_room && (global.run.room_id != r
         struct_remove(_previous_run, "solgryn_portal_arrival");
     }
     if ((_desert_route || room == rm_solgryn) && _continues_without_checkpoint
-        && struct_exists(_previous_run, "solgryn_route_steps")) {
-        global.run.solgryn_route_steps = _previous_run.solgryn_route_steps;
+        && struct_exists(_previous_run, "solgryn_route_seconds")) {
+        global.run.solgryn_route_seconds = _previous_run.solgryn_route_seconds;
     }
     if (_arrived_from_vvvvvv || (room == rm_vvvvvv && _previous_room == rm_mario)) {
-        global.run.boss_entry_steps = _previous_run.boss_entry_steps;
+        global.run.boss_entry_seconds = _previous_run.boss_entry_seconds;
     }
     if (room == rm_shang_tsung && _previous_room == rm_mega_man_world) {
-        global.run.boss_entry_steps = _previous_run.boss_entry_steps;
-        global.run.mega_man_world_wily_cd = _previous_run.mega_man_world_wily_cd;
-        if (struct_exists(_previous_run, "shang_wily_music_handoff")) {
-            global.run.shang_wily_music_handoff = _previous_run.shang_wily_music_handoff;
-            struct_remove(_previous_run, "shang_wily_music_handoff");
-        }
-    }
-    if (room == rm_kid_icarus && _previous_room == rm_shang_tsung
-        && struct_exists(_previous_run, "mega_man_world_wily_cd") && _previous_run.mega_man_world_wily_cd) {
-        global.run.kid_icarus_cd = 9;
+        global.run.boss_entry_seconds = _previous_run.boss_entry_seconds;
     }
     if (room == rm_bomberman && _previous_room == rm_kid_icarus) {
         global.run.bomberman_arrival = true;
-        if (struct_exists(_previous_run, "kid_icarus_cd")) {
-            global.run.kid_icarus_cd = _previous_run.kid_icarus_cd;
-        }
-    }
-    if (room == rm_ninja_gaiden && _previous_room == rm_bomberman
-        && struct_exists(_previous_run, "kid_icarus_cd")) {
-        global.run.ninja_gaiden_cd = _previous_run.kid_icarus_cd;
     }
     if (room == rm_missingno && _previous_room == rm_ninja_gaiden) {
-        if (struct_exists(_previous_run, "ninja_gaiden_cd")) {
-            global.run.ninja_gaiden_cd = _previous_run.ninja_gaiden_cd;
-        }
         if (struct_exists(_previous_run, "missingno_music_handoff")) {
             global.run.missingno_music_handoff = _previous_run.missingno_music_handoff;
             struct_remove(_previous_run, "missingno_music_handoff");
@@ -171,6 +172,11 @@ if (!variable_global_exists("run") || (gameplay_room && (global.run.room_id != r
     }
 }
 if (gameplay_room) {
+    if (room == rm_wow || room == rm_cheetah_men) {
+        if (!struct_exists(global.run, "wow_timer_seconds")) {
+            global.run.wow_timer_seconds = 0;
+        }
+    }
     var _save_exploration = game_mark_explored(teleporter_exploration_key(room));
     if (room == rm_teleporter) {
         var _progress = game_current_progress();
@@ -192,6 +198,12 @@ if (gameplay_room) {
         global.profile.dirty = true;
         game_profile_save();
     }
+} else if (room == rm_title || room == rm_options || room == rm_trophies) {
+    var _slot = room == rm_title || game_menu_from_title() ? game_campaign_title_slot() : campaign_slot;
+    var _progress = is_undefined(_slot) ? global.profile.practice : _slot;
+    var _deaths = is_undefined(_slot) ? global.run.deaths : _slot.deaths;
+    game_check_death_achievement(_deaths, _progress, false);
+    game_check_collection_achievements(_progress, false);
 }
 
 caption_prefix = "I Wanna Be The Boshy";
@@ -233,6 +245,17 @@ if (gameplay_room) {
 
 render_width = 640;
 render_height = 480;
+chest_view_state = { width: room == rm_secret_1_1 ? 640 : 645, x: 0, y: 0,
+    target: room == rm_secret_1_1 ? 320 : 640, opening: false };
+chest_view_crop = undefined;
+chest_view_effect_surface = -1;
+chest_view_overlays = [];
+chest_view_uniform = -1;
+chest_view_size_uniform = -1;
+if (shader_is_compiled(shd_chest_view)) {
+    chest_view_uniform = shader_get_uniform(shd_chest_view, "u_crop");
+    chest_view_size_uniform = shader_get_uniform(shd_chest_view, "u_surface_size");
+}
 teleport_mosaic_columns = 0;
 teleport_mosaic_rows = 0;
 teleporter_arrival_age = -1;
@@ -283,6 +306,15 @@ show_controls = true;
 debug_death_position = undefined;
 death_audio = [];
 stage_music_instance = -1;
+stage_music_cd = 0;
+cd_entry_position = 0;
+if (variable_global_exists("cd_restart") && !is_undefined(global.cd_restart)) {
+    if (global.cd_restart.room_id == room && !global.settings.restart_music) {
+        cd_entry_position = global.cd_restart.position;
+    }
+    global.cd_restart = undefined;
+}
+cd_entry_pending = true;
 stage_music_can_resume = false;
 stage_music_sample_rate = 44100;
 stage_music_frequency = 44100;
@@ -293,7 +325,8 @@ fps_sample_count = 0;
 
 play_death_audio = function(_line) {
     var _death_track = room == rm_mario ? snd_mario_player_death : snd_death;
-    if (room == rm_vvvvvv || room == rm_mega_man_world || room == rm_kid_icarus
+    if (room == rm_secret_jtv || room == rm_pokemon_puzzle || room == rm_wow || room == rm_cheetah_men
+        || room == rm_vvvvvv || room == rm_mega_man_world || room == rm_kid_icarus
         || room == rm_bomberman || room == rm_ninja_gaiden) {
         _death_track = snd_vvvvvv_death;
     } else if (room == rm_biollante) {
@@ -312,8 +345,8 @@ play_death_audio = function(_line) {
         }
     }
     death_audio = [];
-    // The ending rooms and the hub use Death 3 as the base sample.
-    if (room != rm_credits && room != rm_prize_room && room != rm_teleporter) {
+    // In Secret 1-1, the ending rooms and the hub, Death 3 is the only base sample.
+    if (room != rm_secret_1_1 && room != rm_credits && room != rm_prize_room && room != rm_teleporter) {
         array_push(death_audio, audio_play_sound(_death_track, 1, false));
     }
     array_push(death_audio, audio_play_sound(snd_death_impact, 1, false));
@@ -332,6 +365,9 @@ show_player_death = function(_x, _y, _depth, _character) {
     } else if (room == rm_missingno) {
         var _progress = game_current_progress();
         ++_progress.missingno_deaths;
+    } else if (room == rm_cheetah_men) {
+        var _progress = game_current_progress();
+        ++_progress.cheetah_men_deaths;
     } else if (room == rm_solgryn) {
         var _progress = game_current_progress();
         ++_progress.solgryn_deaths;
@@ -353,20 +389,53 @@ show_player_death = function(_x, _y, _depth, _character) {
     }
 };
 
-start_stage_music = function(_sound, _loop = true, _can_resume = true, _sample_rate = 44100) {
-    if (stage_music_instance != -1) {
+stage_music_is_playing = function() {
+    return stage_music_instance != -1 && audio_is_playing(stage_music_instance) && !audio_is_paused(stage_music_instance);
+};
+
+stop_stage_music = function() {
+    if (stage_music_instance != -1 && (audio_is_playing(stage_music_instance) || audio_is_paused(stage_music_instance))) {
         audio_stop_sound(stage_music_instance);
     }
+    stage_music_instance = -1;
+    stage_music_cd = 0;
+};
+
+apply_stage_mixer = function() {
+    if (stage_music_instance == -1 || stage_music_fading || !game_mixer_can_apply()) {
+        return;
+    }
+    var _frequency = game_mixer_frequency(game_music_progress(), stage_music_sample_rate);
+    if (_frequency != stage_music_frequency
+        && (audio_is_playing(stage_music_instance) || audio_is_paused(stage_music_instance))) {
+        stage_music_frequency = _frequency;
+        audio_sound_pitch(stage_music_instance, _frequency / stage_music_sample_rate);
+    }
+};
+
+play_music_channel = function(_sound, _loop, _can_resume, _sample_rate, _position, _cd = 0) {
+    stop_stage_music();
+    stage_music_cd = _cd;
     stage_music_can_resume = _can_resume;
     stage_music_sample_rate = _sample_rate;
     stage_music_frequency = _sample_rate;
     stage_music_volume = global.settings.music_volume;
     stage_music_fading = false;
-    var _start_position = 0;
-    if (_can_resume && !global.settings.restart_music) {
-        _start_position = global.run.music_position;
+    stage_music_instance = audio_play_sound(_sound, 0, _loop, stage_music_volume / 100, _position);
+    apply_stage_mixer();
+};
+
+start_stage_music = function(_sound, _loop = true, _can_resume = true, _sample_rate = 44100, _start_position = undefined) {
+    if (is_undefined(_start_position)) {
+        _start_position = _can_resume && !global.settings.restart_music ? global.run.music_position : 0;
     }
-    stage_music_instance = audio_play_sound(_sound, 0, _loop, stage_music_volume / 100, _start_position);
+    play_music_channel(_sound, _loop, _can_resume, _sample_rate, _start_position);
+};
+
+seek_stage_music = function(_position) {
+    if (stage_music_cd == 0 && stage_music_instance != -1 && audio_is_playing(stage_music_instance)) {
+        audio_sound_set_track_position(stage_music_instance, _position);
+    }
 };
 
 remember_stage_music = function() {
@@ -383,6 +452,7 @@ fade_stage_music = function() {
     // A non-looping track can finish while this controller still holds its instance ID.
     if (!audio_is_playing(stage_music_instance) && !audio_is_paused(stage_music_instance)) {
         stage_music_instance = -1;
+        stage_music_cd = 0;
         return;
     }
     if (!stage_music_fading) {
@@ -480,6 +550,85 @@ get_viewport_rectangle = function() {
         width: _width,
         height: _height
     };
+};
+
+draw_scene_surface = function(_surface, _viewport, _mirror, _flip_y = false) {
+    if (!_mirror && !_flip_y) {
+        draw_surface_stretched(_surface, _viewport.left, _viewport.top, _viewport.width, _viewport.height);
+        return;
+    }
+
+    draw_surface_ext(_surface,
+        _viewport.left + (_mirror ? _viewport.width : 0),
+        _viewport.top + (_flip_y ? _viewport.height : 0),
+        (_mirror ? -1 : 1) * _viewport.width / render_width,
+        (_flip_y ? -1 : 1) * _viewport.height / render_height, 0, c_white, 1);
+};
+
+draw_gameplay_readouts = function(_left, _top, _scale) {
+    if (!gameplay_room || (!show_controls && !global.settings.show_deaths && !global.settings.show_fps)) {
+        return;
+    }
+
+    if (global.settings.show_fps) {
+        var _average = fps_sample_count > 0 ? round(fps_sample_total / fps_sample_count) : fps;
+        draw_boshy_text("FPS - " + string(fps) + " Avg. - " + string(_average),
+            _left + 384 * _scale, _top + 464 * _scale, 1, _scale);
+    }
+
+    var _deaths = global.run.deaths;
+    var _death_count = string(_deaths) + (_deaths == 1 ? " death" : " deaths");
+    if (!show_controls) {
+        if (global.settings.show_deaths && room != rm_solgryn) {
+            draw_boshy_text(_death_count, _left + 6 * _scale, _top + (render_height - 18) * _scale, 1, _scale);
+        }
+        return;
+    }
+
+    var _right = _left + render_width * _scale;
+    draw_set_font(-1);
+    draw_set_valign(fa_middle);
+    draw_set_color(c_black);
+    draw_set_alpha(0.76);
+    draw_rectangle(_left, _top, _right, _top + 42 * _scale, false);
+    draw_set_alpha(1);
+    draw_set_color(c_white);
+    draw_set_halign(fa_left);
+    var _keys = global.settings.keys;
+    draw_text_transformed(_left + 10 * _scale, _top + 12 * _scale,
+        game_key_name(_keys.left) + " / " + game_key_name(_keys.right)
+        + " Move     " + game_key_name(_keys.jump) + " Jump     " + game_key_name(_keys.shoot) + " Shoot", _scale, _scale, 0);
+    draw_text_transformed(_left + 10 * _scale, _top + 30 * _scale, game_key_name(_keys.restart)
+        + " Restart     Esc Options     F3 Character     F4 Display     F5 Trophies", _scale, _scale, 0);
+    if (global.settings.show_deaths) {
+        draw_set_halign(fa_right);
+        draw_text_transformed(_right - 10 * _scale, _top + 12 * _scale, _death_count, _scale, _scale, 0);
+    }
+    draw_set_halign(fa_left);
+    draw_set_valign(fa_top);
+};
+
+get_viewport_pointer = function(_mirror = true) {
+    var _viewport = get_viewport_rectangle();
+    if (is_undefined(_viewport)) {
+        return undefined;
+    }
+
+    var _x = window_mouse_get_x() - _viewport.left;
+    var _y = window_mouse_get_y() - _viewport.top;
+    if (_x < 0 || _x >= _viewport.width || _y < 0 || _y >= _viewport.height) {
+        return undefined;
+    }
+
+    if (_mirror && game_view_mirrored()) {
+        _x = _viewport.width - 1 - _x;
+    }
+    if (!is_undefined(chest_view_crop) && chest_view_uniform != -1) {
+        var _sample = chest_view_sample(chest_view_crop, _x * render_width / _viewport.width,
+            _y * render_height / _viewport.height, render_width, render_height);
+        return { x: _sample.x / render_width, y: _sample.y / render_height };
+    }
+    return { x: _x / _viewport.width, y: _y / _viewport.height };
 };
 
 cycle_display_mode = function(_direction = 1) {

@@ -1,8 +1,6 @@
 game_controller = instance_find(obj_game, 0);
 trophy_title = "";
 trophy_steps = -1;
-exit_notice = "";
-exit_notice_steps = 0;
 
 castlevania_show_trophy = function(_title) {
     trophy_title = _title;

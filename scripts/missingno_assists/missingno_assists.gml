@@ -11,7 +11,7 @@ function missingno_guard_step() {
     // G909–911 keep the guard centered below the boss and hide it when it descends.
     _guard.x = x;
     _guard.y = y + 16;
-    var _scale = image_xscale + 0.6 + dsin((scene_steps * 20) / 3) * 0.35;
+    var _scale = image_xscale + 0.6 + dsin((game_controller.frame_elapsed_us div 1000) / 3) * 0.35;
     _guard.image_xscale = _scale;
     _guard.image_yscale = _scale;
     _guard.image_alpha = max(25 / 255, _guard.image_alpha - 5 / 255);

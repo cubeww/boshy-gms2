@@ -94,12 +94,12 @@ function vvvvvv_apply_triggers() {
 
 function vvvvvv_wrap_horizontal() {
     var _keys = global.settings.keys;
-    var _trigger = keyboard_check(_keys.right) ? vvvvvv_find_trigger(VvvvvvTrigger.WrapLeft) : noone;
+    var _trigger = keyboard_check(game_horizontal_key(_keys, true)) ? vvvvvv_find_trigger(VvvvvvTrigger.WrapLeft) : noone;
     if (_trigger != noone) {
         wrap_page_x = floor(_trigger.x / 640) * 640;
         x -= 625;
     } else {
-        _trigger = keyboard_check(_keys.left) ? vvvvvv_find_trigger(VvvvvvTrigger.WrapRight) : noone;
+        _trigger = keyboard_check(game_horizontal_key(_keys, false)) ? vvvvvv_find_trigger(VvvvvvTrigger.WrapRight) : noone;
         if (_trigger == noone) {
             return;
         }

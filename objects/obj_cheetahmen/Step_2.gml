@@ -3,6 +3,7 @@ if (trophy_steps >= 0 && ++trophy_steps >= 226) {
 }
 
 if (pipe_steps >= 0) {
+    chest_view_update(game_controller, noone, -1);
     if (++pipe_steps >= 50) {
         room_goto(rm_mario);
     }
@@ -23,6 +24,7 @@ if (_player != noone && _player.touching_hazard()) {
 cheetahmen_step_archer(_player);
 cheetahmen_step_arrows();
 if (_player == noone) {
+    update_view(noone);
     game_controller.fade_stage_music();
     exit;
 }

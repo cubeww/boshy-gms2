@@ -16,6 +16,7 @@ if (_route != noone) {
 }
 _player = instance_find(obj_player, 0);
 if (_player == noone) {
+    chest_view_update(game_controller, noone, -1);
     game_controller.fade_stage_music();
     exit;
 }
@@ -29,7 +30,4 @@ with (obj_ninja_gaiden_music_trigger) {
     } else if (x < _player.x) {
         instance_destroy();
     }
-}
-if (!_player.input_locked && !scene_track_active) {
-    update_cd();
 }

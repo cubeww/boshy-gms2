@@ -60,4 +60,5 @@ repeat_direction = 0;
 held_steps = 0;
 age_steps = 0;
 title_scale = 0.1;
-music_instance = audio_play_sound(snd_options_music, 0, true, global.settings.music_volume / 100);
+var _game = instance_find(obj_game, 0);
+_game.start_stage_music(snd_options_music, true, false, 44100);

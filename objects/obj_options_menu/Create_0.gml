@@ -3,7 +3,7 @@ controls_open = false;
 capturing_key = false;
 capture_hint = "";
 selected_row = 0;
-vertical_repeat = { direction: 0, age: 0 };
+vertical_repeat = { direction: 0, age: 0, up_us: 0, down_us: 0 };
 horizontal_repeat = { direction: 0, age: 0 };
 
 options = [
@@ -33,10 +33,10 @@ options = [
         help: "Turn on/off an FPS mark\ndisplayed ingame." },
     { top: 718, label: "Transparency\nof online\nplayers", action: "unavailable", value: "N/A",
         help: "Applies to other players\nin online play." },
-    { top: 767, label: "Frame Rate", action: "unavailable", value: "50",
-        help: "The game runs at 50\nsteps per second." },
-    { top: 815, label: "Mirror mode", action: "unavailable", value: "N/A",
-        help: "Mirrored rooms are\nunavailable." },
+    { top: 767, label: "Frame Rate", action: "frame_rate",
+        help: "Use left/right to set\nthe frame rate. Applies\nwhen you leave Options." },
+    { top: 815, label: "Mirror mode", setting: "mirror", limit: 1,
+        help: "Turn on/off mirroring\nof the world." },
     { top: 864, label: "Death\nCounter", setting: "show_deaths", limit: 1,
         help: "Turn on/off the on-screen\ndeath counter while\nplaying." },
     { top: 913, label: "Auto Fire", setting: "auto_fire", limit: 1,
@@ -49,13 +49,15 @@ marker_y = 151;
 bindings = [
     { top: 128, label: "Move Left", setting: "left" },
     { top: 177, label: "Move Right", setting: "right" },
-    { top: 226, label: "Jump", setting: "jump" },
-    { top: 276, label: "Shoot", setting: "shoot" },
-    { top: 325, label: "Restart", setting: "restart" },
-    { top: 374, label: "Back to\nOptions", action: "back" }
+    { top: 226, label: "Move Up", setting: "up" },
+    { top: 276, label: "Move Down", setting: "down" },
+    { top: 325, label: "Jump", setting: "jump" },
+    { top: 374, label: "Shoot", setting: "shoot" },
+    { top: 423, label: "Restart", setting: "restart" },
+    { top: 472, label: "Back to\nOptions", action: "back" }
 ];
 
-music_instance = audio_play_sound(snd_options_music, 0, true, global.settings.music_volume / 100);
+game_controller.start_stage_music(snd_options_music, true, false, 44100);
 speech_preview_instance = -1;
 speech_preview_steps = 0;
 
@@ -74,7 +76,7 @@ handle_escape = function() {
     return false;
 };
 
-read_direction = function(_negative, _positive, _repeat) {
+read_direction = function(_negative, _positive, _repeat, _timed = false) {
     var _direction = keyboard_check(_positive) - keyboard_check(_negative);
     if (_direction != _repeat.direction) {
         _repeat.direction = _direction;
@@ -84,8 +86,17 @@ read_direction = function(_negative, _positive, _repeat) {
 
     if (_direction != 0) {
         ++_repeat.age;
-        if (_repeat.age >= 10 && (_repeat.age - 10) mod 5 == 0) {
-            return _direction;
+        if (_repeat.age >= 10) {
+            if (_timed) {
+                var _timer = _direction < 0 ? "up_us" : "down_us";
+                var _elapsed = struct_get(_repeat, _timer) + delta_time;
+                var _due = _elapsed >= 100000;
+                struct_set(_repeat, _timer, _elapsed - (_due ? 100000 : 0));
+                return _due ? _direction : 0;
+            }
+            if ((_repeat.age - 10) mod 5 == 0) {
+                return _direction;
+            }
         }
     }
     return 0;

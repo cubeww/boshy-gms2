@@ -238,7 +238,7 @@ function bomberman_ordnance_step(_player) {
         switch (attack_kind) {
             case BombermanAttack.SlashRing:
                 bomberman_ordnance_projection(travel_speed, travel_angle);
-                image_xscale = 1.25 + dcos(other.scene_steps * 20) * 0.25;
+                image_xscale = 1.25 + dcos(_boss.game_controller.frame_elapsed_us div 1000) * 0.25;
                 image_yscale = image_xscale;
                 break;
             case BombermanAttack.BounceBomb:

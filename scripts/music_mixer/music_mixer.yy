@@ -1,0 +1,13 @@
+{
+  "$GMScript":"v1",
+  "%Name":"music_mixer",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"music_mixer",
+  "parent":{
+    "name":"Game",
+    "path":"folders/Shared/Game.yy",
+  },
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}

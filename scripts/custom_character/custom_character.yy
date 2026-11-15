@@ -1,0 +1,10 @@
+{
+  "$GMScript":"v1",
+  "%Name":"custom_character",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"custom_character",
+  "parent":{"name":"Game","path":"folders/Shared/Game.yy",},
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}

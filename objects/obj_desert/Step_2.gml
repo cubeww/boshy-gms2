@@ -22,15 +22,13 @@ with (obj_desert_background_haze) {
     advance_haze(other.page_left);
 }
 if (_player == noone) {
+    chest_view_update(game_controller, noone, -1);
     game_controller.fade_stage_music();
     exit;
 }
 
 if (_player.input_locked) {
     exit;
-}
-if (ninja_gaiden_toggle_cd()) {
-    play_stage_track();
 }
 if (_route != noone) {
     // G500/G526 use the Player hotspot and half-open zones.

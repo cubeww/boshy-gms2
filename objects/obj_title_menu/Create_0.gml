@@ -51,12 +51,13 @@ jump_voice = -1;
 camping_voice = -1;
 boshy_voice = -1;
 var _music_offset = _returning ? 14 : 0;
-title_music = audio_play_sound(snd_title_music, 0, false, global.settings.music_volume / 100, _music_offset);
+// Fusion G516 starts the title cue on the shared music channel after the CD entry events.
+game_controller.start_stage_music(snd_title_music, false, false, 48000, _music_offset);
 
 settle_title = function(_skip) {
     attract_steps = 610;
     if (_skip) {
-        audio_sound_set_track_position(title_music, 14);
+        game_controller.seek_stage_music(14);
         if (jump_voice != -1) {
             audio_stop_sound(jump_voice);
         }

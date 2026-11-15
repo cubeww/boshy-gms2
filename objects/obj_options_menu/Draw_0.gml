@@ -31,6 +31,8 @@ for (var _i = 0; _i < array_length(_rows); ++_i) {
         }
     } else if (_row.action == "display") {
         _value = window_get_fullscreen() ? "Fullscreen" : string(window_get_width()) + "x" + string(window_get_height());
+    } else if (_row.action == "frame_rate") {
+        _value = string(global.settings.frame_rate);
     } else if (_row.action == "controls") {
         draw_boshy_text("Button 1: Jump\nButton 2: Shoot\nButton 3: Restart", 399, _top + 6);
     } else if (_row.action == "unavailable") {

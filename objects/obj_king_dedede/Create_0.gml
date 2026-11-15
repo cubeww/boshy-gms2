@@ -42,12 +42,16 @@ take_player_shot = function(_bullet) {
         return false;
     }
 
+    take_hit();
+    return true;
+};
+
+take_hit = function(_hit_sound = snd_hello_kitty_hit) {
     // The native RIGHT?! window moves the King two pixels per shot.
     x += 2;
     dedede_falling = x > 560;
     if (hit_flash_steps == 0) {
         hit_flash_steps = 10;
     }
-    audio_play_sound(snd_hello_kitty_hit, 1, false);
-    return true;
+    audio_play_sound(_hit_sound, 1, false);
 };

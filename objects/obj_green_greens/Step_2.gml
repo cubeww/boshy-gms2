@@ -47,7 +47,7 @@ if (flip_view_steps >= 0 && ++flip_view_steps == 30) {
 }
 
 var _music = _player.x < 2550 ? snd_green_greens_music : snd_green_greens_plains;
-if (!instance_exists(kracko_boss) && _music != region_music) {
+if (!instance_exists(kracko_boss) && _music != region_music && game_selected_cd() == 0) {
     region_music = _music;
     global.run.music_position = 0;
     game_controller.start_stage_music(_music);

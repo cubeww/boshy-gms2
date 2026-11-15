@@ -3,10 +3,12 @@ if (is_undefined(character)) {
     character = boshy_character();
 }
 left_poses = struct_exists(character, "poses_left") ? character.poses_left : character.poses;
+custom_pose_timing = struct_exists(character, "custom");
 walk_sound = struct_exists(character, "walk_sound") ? character.walk_sound : noone;
 walk_sound_always = struct_exists(character, "walk_sound_always") && character.walk_sound_always;
 land_sound = struct_exists(character, "land_sound") ? character.land_sound : noone;
 walk_instance = -1;
+custom_trail_steps = 0;
 
 stop_walk_sound = function() {
     if (walk_instance != -1) {
@@ -16,18 +18,25 @@ stop_walk_sound = function() {
 };
 
 update_player_shooting = function(_poses, _allow_auto_fire = true, _shoot_key = undefined) {
+    if (room == rm_wow && wow_login_typing()) {
+        return;
+    }
     var _settings = global.settings;
     if (is_undefined(_shoot_key)) {
         _shoot_key = _settings.keys.shoot;
     }
     var _shoot = keyboard_check_pressed(_shoot_key);
-    if (_allow_auto_fire && keyboard_check(_shoot_key) && game_settings_option_value("auto_fire")) {
-        ++shoot_hold_steps;
-        _shoot = _shoot || shoot_hold_steps mod 5 == 0;
-    } else {
-        shoot_hold_steps = 0;
+    if (instance_number(obj_bullet) >= 5) {
+        return;
     }
-    if (!_shoot || instance_number(obj_bullet) >= 5) {
+    if (_allow_auto_fire && keyboard_check(_shoot_key) && game_settings_option_value("auto_fire")) {
+        shoot_hold_us += delta_time;
+        if (shoot_hold_us >= 100000) {
+            shoot_hold_us -= 100000;
+            _shoot = true;
+        }
+    }
+    if (!_shoot) {
         return;
     }
 
@@ -40,19 +49,26 @@ update_player_shooting = function(_poses, _allow_auto_fire = true, _shoot_key = 
         instance_create_depth(x + facing * gravity_direction * character.muzzle_x,
             y + gravity_direction * character.muzzle_y, depth, obj_bullet, {
                 travel_direction: facing,
-                sprite_index: _projectile_sprite
+                sprite_index: _projectile_sprite,
+                custom_bullet: custom_character_bullet_clip(character)
             });
     }
-    audio_play_sound(_settings.special_shoot_sounds ? character.shoot_sound : snd_shoot, 1, false);
+    var _shoot_sound = _settings.special_shoot_sounds ? character.shoot_sound : snd_shoot;
+    if (_shoot_sound != noone) {
+        audio_play_sound(_shoot_sound, 1, false);
+    }
     var _shoot_clip = _poses[PlayerPose.Shoot];
-    shoot_pose_steps = ceil(array_length(_shoot_clip.frames) / _shoot_clip.rate);
+    shoot_pose_remaining = custom_pose_timing
+        ? array_length(_shoot_clip.frames) * max(1, character.custom.animations[PlayerPose.Shoot].delay)
+        : ceil(array_length(_shoot_clip.frames) / _shoot_clip.rate);
 };
 
 pose = PlayerPose.Idle;
 pose_frame = 0;
 pose_steps = 0;
-shoot_pose_steps = 0;
-shoot_hold_steps = 0;
+chest_pose_age = -1;
+shoot_pose_remaining = 0;
+shoot_hold_us = 0;
 
 hsp = 0;
 vsp = 0;
@@ -62,6 +78,7 @@ jumped_this_step = false;
 jump_cut_enabled = false;
 input_locked = false;
 dead = false;
+secret_1_1_poison_steps = 0;
 gravity_direction = 1;
 gravity_flip_enabled = false;
 vvvvvv_trigger_list = -1;
@@ -95,6 +112,10 @@ switch (room) {
     case room1:
     case rm_tutorial:
     case rm_prehistorik:
+    case rm_secret_1_1:
+    case rm_secret_jtv:
+    case rm_pokemon_puzzle:
+    case rm_wow:
     case rm_cheetahmen:
     case rm_mega_man_world:
     case rm_kid_icarus:
@@ -109,6 +130,10 @@ switch (room) {
         right_probe = { left: 6, top: -13, right: 7, bottom: -2 };
         up_probe = { left: -7, top: -16, right: 6, bottom: -15 };
         break;
+}
+
+if (room == rm_wow) {
+    wow_jump_speed = character.movement.jump_speed;
 }
 
 var _return_position = undefined;
@@ -314,6 +339,9 @@ move_player_vertical = function() {
         repeat (floor(abs(vsp)) + 1) {
             // Group 11 refreshes before groups 15, 16, and 20 on the Y loop.
             refresh_collision_probes();
+            if (room == rm_secret_1_1 && secret_1_1_move_y(id)) {
+                break;
+            }
             if (vsp > 0) {
                 if (!probe_overlaps(_ground_probe, terrain_targets)
                     || probe_overlaps(right_probe, obj_one_way_platform)
@@ -326,6 +354,9 @@ move_player_vertical = function() {
                 } else {
                     vsp = 0;
                 }
+            }
+            if (room == rm_cheetah_men && cheetah_men_phase_three_check_player(id)) {
+                return;
             }
             if (room == rm_kid_icarus) {
                 kid_icarus_collect_coins(probe_x, probe_y);
@@ -365,3 +396,5 @@ die = function(_outside_room = false) {
     instance_destroy();
     return true;
 };
+
+player_spawn_costume_effect();

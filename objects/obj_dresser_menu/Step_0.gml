@@ -1,6 +1,11 @@
 ++elapsed_steps;
 notice_steps = max(0, notice_steps - 1);
 
+if (keyboard_check_pressed(vk_escape) && is_undefined(custom_editor)) {
+    game_return_from_menu();
+    exit;
+}
+
 if (!is_undefined(hidden_portrait)
     && string_ends_with(string_lower(keyboard_string), string_lower(hidden_portrait.entry.unlock_key))) {
     game_character_unlock(hidden_portrait.entry.unlock_key);
@@ -11,11 +16,19 @@ if (!is_undefined(hidden_portrait)
 
 hovered_slot = -1;
 var _viewport = game_controller.get_viewport_rectangle();
+var _pointer_x = -1;
+var _pointer_y = -1;
 if (!is_undefined(_viewport)) {
     // Match the application surface destination, including the fullscreen black bars.
-    var _pointer_x = floor((window_mouse_get_x() - _viewport.left) * 640 / _viewport.width);
-    var _pointer_y = floor((window_mouse_get_y() - _viewport.top) * 480 / _viewport.height);
+    _pointer_x = floor((window_mouse_get_x() - _viewport.left) * 640 / _viewport.width);
+    _pointer_y = floor((window_mouse_get_y() - _viewport.top) * 480 / _viewport.height);
+}
+if (!is_undefined(custom_editor)) {
+    custom_character_editor_step(_pointer_x, _pointer_y);
+    exit;
+}
 
+if (!is_undefined(_viewport)) {
     for (var _i = array_length(portraits) - 1; _i >= 0; --_i) {
         var _portrait = portraits[_i];
         var _left = _portrait.center_x - _portrait.half_width;
@@ -31,6 +44,9 @@ if (!is_undefined(_viewport)) {
         if (hovered_slot >= 0) {
             var _portrait = portraits[hovered_slot];
             if (_portrait.status == "available") {
+                custom_character_unload(custom_preview_data);
+                custom_preview_data = undefined;
+                custom_preview_name = "";
                 selected_slot = hovered_slot;
                 preview_character = game_character_definition(_portrait.entry.id);
                 preview_frame = 0;
@@ -52,14 +68,20 @@ if (!is_undefined(_viewport)) {
                 notice_steps = 100;
             }
         } else if (point_in_rectangle(_pointer_x, _pointer_y, 250, 396, 390, 418)) {
-            if (game_character_select(portraits[selected_slot].entry)) {
+            var _accepted = custom_preview_name == "" ? game_character_select(portraits[selected_slot].entry)
+                : game_character_select_custom(custom_preview_name);
+            if (_accepted) {
                 game_return_from_menu();
                 exit;
             }
-        } else if (point_in_rectangle(_pointer_x, _pointer_y, 32, 192, 95, 223)
-            || point_in_rectangle(_pointer_x, _pointer_y, 104, 192, 151, 223)
-            || point_in_rectangle(_pointer_x, _pointer_y, 32, 225, 127, 247)) {
-            notice = "Custom characters are unavailable.";
+        } else if (point_in_rectangle(_pointer_x, _pointer_y, 32, 192, 95, 223)) {
+            custom_character_editor_open(true);
+            exit;
+        } else if (point_in_rectangle(_pointer_x, _pointer_y, 104, 192, 151, 223)) {
+            custom_character_editor_open(false);
+            exit;
+        } else if (point_in_rectangle(_pointer_x, _pointer_y, 32, 225, 127, 247)) {
+            notice = "Downloads are unavailable.";
             notice_steps = 100;
         }
     }
@@ -73,9 +95,11 @@ for (var _i = 0; _i < array_length(portraits); ++_i) {
     }
 }
 
-var _selected = portraits[selected_slot];
-selection_x = lerp(selection_x, _selected.center_x, 0.25);
-selection_y = lerp(selection_y, _selected.entry.y, 0.25);
+if (custom_preview_name == "") {
+    var _selected = portraits[selected_slot];
+    selection_x = lerp(selection_x, _selected.center_x, 0.25);
+    selection_y = lerp(selection_y, _selected.entry.y, 0.25);
+}
 selection_angle = (selection_angle + 5) mod 360;
 spotlight_alpha = min(0.625, spotlight_alpha + 5 / 128);
 

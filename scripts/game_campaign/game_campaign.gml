@@ -10,7 +10,8 @@ function game_campaign_empty_slot() {
         solgryn_best_time: 9999, solgryn_deaths: 0, credits_seen: false,
         exploration: {}, teleporter_unlocked: false, boss_rush_clears: {}, boss_rush_seconds: 0, boss_rush_deaths: 0,
         vvvvvv_gravity: 1, vvvvvv_gravity_flip: false,
-        gastly_dismissed: true, mega_man_world_cue_played: false, ninja_gaiden_cd: 0
+        gastly_dismissed: true, mega_man_world_cue_played: false, playing_cd: 0, wow_account_name: "",
+        cheetah_men_deaths: 0, mixer_frequency_offset: undefined
     };
 }
 
@@ -18,11 +19,13 @@ function game_campaign_stage_key(_room) {
     switch (_room) {
         case rm_tutorial: return "tutorial";
         case rm_prehistorik: return "prehistorik";
+        case rm_secret_1_1: return "secret_1_1";
         case rm_hello_kitty: return "hello_kitty";
         case rm_green_greens: return "green_greens";
         case rm_king_dedede: return "king_dedede";
         case rm_ryu: return "ryu";
         case rm_cheetahmen: return "cheetahmen";
+        case rm_secret_jtv: return "secret_jtv";
         case rm_gastly: return "gastly";
         case rm_mario: return "mario";
         case rm_vvvvvv: return "vvvvvv";
@@ -30,9 +33,12 @@ function game_campaign_stage_key(_room) {
         case rm_wario: return "wario";
         case rm_sanicz: return "sanicz";
         case rm_castlevania: return "castlevania";
+        case rm_pokemon_puzzle: return "pokemon_puzzle";
         case rm_gradius: return "gradius";
         case rm_skeleton_king: return "skeleton_king";
         case rm_milon: return "milon";
+        case rm_wow: return "wow";
+        case rm_cheetah_men: return "cheetah_men";
         case rm_milon_depths: return "milon_depths";
         case rm_mega_man: return "mega_man";
         case rm_mega_man_world: return "mega_man_world";
@@ -56,11 +62,13 @@ function game_campaign_stage_room(_stage) {
     switch (_stage) {
         case "tutorial": return rm_tutorial;
         case "prehistorik": return rm_prehistorik;
+        case "secret_1_1": return rm_secret_1_1;
         case "hello_kitty": return rm_hello_kitty;
         case "green_greens": return rm_green_greens;
         case "king_dedede": return rm_king_dedede;
         case "ryu": return rm_ryu;
         case "cheetahmen": return rm_cheetahmen;
+        case "secret_jtv": return rm_secret_jtv;
         case "gastly": return rm_gastly;
         case "mario": return rm_mario;
         case "vvvvvv": return rm_vvvvvv;
@@ -68,9 +76,12 @@ function game_campaign_stage_room(_stage) {
         case "wario": return rm_wario;
         case "sanicz": return rm_sanicz;
         case "castlevania": return rm_castlevania;
+        case "pokemon_puzzle": return rm_pokemon_puzzle;
         case "gradius": return rm_gradius;
         case "skeleton_king": return rm_skeleton_king;
         case "milon": return rm_milon;
+        case "wow": return rm_wow;
+        case "cheetah_men": return rm_cheetah_men;
         case "milon_depths": return rm_milon_depths;
         case "mega_man": return rm_mega_man;
         case "mega_man_world": return rm_mega_man_world;
@@ -257,7 +268,7 @@ function game_start_campaign(_slot, _difficulty = undefined) {
         desert_snake: _save.desert_snake,
         desert_switch: _save.desert_switch,
         desert_checkpoint_switch: _save.desert_switch,
-        boss_entry_steps: 0,
+        boss_entry_seconds: 0,
         music_position: 0,
         ryu_entry_y: undefined,
         gastly_return_run: undefined,
@@ -323,7 +334,9 @@ function game_return_from_menu() {
         return;
     }
     var _run = global.run;
-    if (room == rm_options && (_run.room_id == rm_credits || _run.room_id == rm_prize_room
+    if (room == rm_options && (_run.room_id == rm_secret_1_1 || _run.room_id == rm_secret_jtv || _run.room_id == rm_pokemon_puzzle
+        || _run.room_id == rm_wow || _run.room_id == rm_cheetah_men
+        || _run.room_id == rm_credits || _run.room_id == rm_prize_room
         || _run.room_id == rm_teleporter || struct_exists(_run, "teleporter_entry"))
         && !_run.has_checkpoint && !is_undefined(_run.restart_run)) {
         // Fusion Options G364 returns to the last saved frame.
@@ -331,6 +344,9 @@ function game_return_from_menu() {
         _checkpoint_run.deaths = _run.deaths;
         _checkpoint_run.world_deaths = _run.world_deaths;
         _checkpoint_run.music_position = 0;
+        if (_run.room_id == rm_cheetah_men && _checkpoint_run.room_id == rm_wow) {
+            _checkpoint_run.wow_timer_seconds = _run.wow_timer_seconds;
+        }
         global.run = _checkpoint_run;
     }
     room_goto(global.run.room_id);

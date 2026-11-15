@@ -8,7 +8,6 @@ if (_player != noone && victory_age < 260 && _player.boshy_mask_meeting(id) && _
 game_controller.scene_shake_x = shake_x;
 game_controller.scene_shake_y = shake_y;
 ++scene_steps;
-attempt_steps = (scene_steps div 50 - attempt_start_steps div 50) * 50;
 if (_player == noone) {
     game_controller.fade_stage_music();
 }
@@ -29,8 +28,8 @@ if (victory_age < 0 && hit_points > 0) {
                 x = _player.x;
             }
             y = -40;
-            attempt_start_steps = scene_steps;
-            attempt_steps = 0;
+            // G681 resets the displayed seconds while G588 keeps its room-wide pulse.
+            timer_reset_second = game_controller.frame_seconds;
             audio_play_sound(snd_mega_man_teleport, 1, false);
             break;
 
@@ -77,7 +76,7 @@ if (victory_age < 0 && hit_points > 0) {
     } else if (fight_age >= 630 && fight_age < 750) {
         mega_man_set_pose(13, facing);
         x += 10;
-        y = floor(80 + dsin((scene_steps * 20) div 3) * 20);
+        y = floor(80 + dsin(game_controller.frame_elapsed_us div 3000) * 20);
     } else if (fight_age >= 850 && fight_age < 880) {
         x -= 10;
         fight_age -= 0.5;
@@ -105,7 +104,7 @@ if (victory_age < 0 && hit_points > 0 && final_form) {
     mega_man_clear_diving_sparks();
 }
 if (victory_age < 0 && hit_points <= 0) {
-    mega_man_victory_begin(attempt_steps);
+    mega_man_victory_begin(game_controller.frame_seconds - timer_reset_second);
 }
 if (victory_age >= 0) {
     mega_man_victory_step();

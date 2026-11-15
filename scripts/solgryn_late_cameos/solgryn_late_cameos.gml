@@ -17,6 +17,7 @@ enum SolgrynGuest {
     Bomb,
     SecondBomb,
     Sonic,
+    SonicSpark,
     Fade
 }
 
@@ -35,10 +36,11 @@ function solgryn_cameo_actor_init() {
     guest_fade_from = 15;
     guest_fade_end = 26;
     guest_grow = 0;
-    guest_streak = 0;
+    guest_blur = 0;
     guest_blend = bm_normal;
     guest_attacker = noone;
     guest_caption = noone;
+    guest_trail_created = false;
     image_speed = 0;
 }
 
@@ -61,14 +63,47 @@ function solgryn_cameo_pose(_actor, _sprite) {
 
 function solgryn_cameo_draw() {
     gpu_set_blendmode(guest_blend);
-    if (guest_streak >= 1) {
-        for (var _trail = 3; _trail >= 1; --_trail) {
-            draw_sprite_ext(sprite_index, image_index, x + guest_streak * _trail, y,
-                image_xscale, image_yscale, image_angle, image_blend, image_alpha * (0.32 - _trail * 0.06));
-        }
+    if (guest_blur > 0 && shader_is_compiled(shd_solgryn_cameo_blur)) {
+        solgryn_cameo_draw_blur();
+    } else {
+        draw_self();
     }
-    draw_self();
     gpu_set_blendmode(bm_normal);
+}
+
+function solgryn_cameo_draw_blur() {
+    static _bounds_uniform = shader_get_uniform(shd_solgryn_cameo_blur, "u_atlas_bounds");
+    static _offset_uniform = shader_get_uniform(shd_solgryn_cameo_blur, "u_offset");
+    var _frame = floor(image_index);
+    var _uv = sprite_get_uvs(sprite_index, _frame);
+    var _width = sprite_get_width(sprite_index);
+    var _height = sprite_get_height(sprite_index);
+    var _uv_width = (_uv[2] - _uv[0]) / _uv[6];
+    var _uv_height = (_uv[3] - _uv[1]) / _uv[7];
+    var _u = _uv[0] - _uv[4] * _uv_width / _width;
+    var _v = _uv[1] - _uv[5] * _uv_height / _height;
+
+    // Draw the untrimmed canvas so samples can extend beyond the sprite's atlas crop.
+    var _left = -sprite_get_xoffset(sprite_index) * image_xscale;
+    var _top = -sprite_get_yoffset(sprite_index) * image_yscale;
+    var _right = _left + _width * image_xscale;
+    var _bottom = _top + _height * image_yscale;
+    var _cos = dcos(image_angle);
+    var _sin = dsin(image_angle);
+    shader_set(shd_solgryn_cameo_blur);
+    shader_set_uniform_f(_bounds_uniform, _uv[0], _uv[1], _uv[2], _uv[3]);
+    shader_set_uniform_f(_offset_uniform, guest_blur * _uv_width);
+    draw_primitive_begin_texture(pr_trianglestrip, sprite_get_texture(sprite_index, _frame));
+    draw_vertex_texture_color(x + _left * _cos + _top * _sin, y - _left * _sin + _top * _cos,
+        _u, _v, image_blend, image_alpha);
+    draw_vertex_texture_color(x + _right * _cos + _top * _sin, y - _right * _sin + _top * _cos,
+        _u + _uv_width, _v, image_blend, image_alpha);
+    draw_vertex_texture_color(x + _left * _cos + _bottom * _sin, y - _left * _sin + _bottom * _cos,
+        _u, _v + _uv_height, image_blend, image_alpha);
+    draw_vertex_texture_color(x + _right * _cos + _bottom * _sin, y - _right * _sin + _bottom * _cos,
+        _u + _uv_width, _v + _uv_height, image_blend, image_alpha);
+    draw_primitive_end();
+    shader_reset();
 }
 
 function solgryn_cameo_afterimage(_actor, _sprite, _grow, _fade_steps) {
@@ -156,14 +191,29 @@ function solgryn_cameo_ryu(_actor) {
             _actor.x -= _age < 100 ? 15 : 7;
         }
     }
-    if (_actor.sprite_index == spr_solgryn_late_cameos_ryu_car_pose) {
-        var _end = ceil(sprite_get_number(spr_solgryn_late_cameos_ryu_car_pose) / 0.4);
-        if (_age == 190 + _end) {
-            solgryn_cameo_pose(_actor, spr_solgryn_late_cameos_ryu_idle);
-        }
+    // G1235 freezes the frame of the current Fusion animation in each copy.
+    if ((_actor.sprite_index == spr_solgryn_late_cameos_ryu_spin
+        || _actor.sprite_index == spr_solgryn_late_cameos_ryu_car_pose)
+        && _actor.guest_animation > _actor.image_number * 100) {
+        solgryn_cameo_pose(_actor, spr_solgryn_late_cameos_ryu_idle);
     }
-    // G1234–G1237 copy the current Ryu pose after his movement.
     solgryn_cameo_afterimage(_actor, _actor.sprite_index, 0.05, 255 / 25);
+}
+
+function solgryn_cameo_hadoken(_actor) {
+    // G1209 puts the integer hotspot at the accumulated position before G1210 checks impact.
+    _actor.y = _actor.guest_next_y;
+    _actor.guest_next_y += _actor.guest_vsp;
+    if (_actor.guest_on_backdrop()) {
+        var _decay = solgryn_cameo_spawn(SolgrynGuest.Fade, spr_ryu_combat_hadoken_disappearance,
+            _actor.x, _actor.y, false);
+        _decay.image_angle = _actor.image_angle;
+        _decay.guest_life = 9;
+        _decay.guest_fade_from = _decay.guest_life;
+        instance_destroy(_actor);
+    } else if (_actor.bbox_top > 3000) {
+        instance_destroy(_actor);
+    }
 }
 
 function solgryn_cameo_car(_actor) {
@@ -217,6 +267,7 @@ function solgryn_cameo_car_debris(_actor, _age) {
 
 function solgryn_cameo_kitty(_actor) {
     var _age = _actor.guest_age;
+    // G1238–1241 move, create the warning, and then increment the age.
     _actor.y += _age <= 50 ? 9 : 5;
     if (_age == 56) {
         var _laser = solgryn_cameo_spawn(SolgrynGuest.KittyLaser, spr_solgryn_late_cameos_kitty_laser_thin,
@@ -239,6 +290,7 @@ function solgryn_cameo_kitty_laser(_actor) {
     } else if (_age <= 60) {
         if (_age == 51) {
             solgryn_cameo_pose(_actor, spr_solgryn_late_cameos_kitty_laser);
+            // G1246 returns the firing beam from the foreground warning layer to Game.
             _actor.depth = layer_get_depth("Player") - 1;
             audio_play_sound(snd_hello_kitty_laser, 1, false, 0.4);
         }
@@ -263,6 +315,8 @@ function solgryn_cameo_small_mario(_actor) {
             var _warning = solgryn_cameo_spawn(SolgrynGuest.Fade, spr_solgryn_late_cameos_mario_warning,
                 605, 2771, false);
             _warning.image_angle = 90;
+            _warning.guest_fade_from = 14;
+            _warning.guest_fade_end = 14 + 255 / 25;
             break;
         case 150:
             var _giant = solgryn_cameo_spawn(SolgrynGuest.GiantMario, spr_solgryn_late_cameos_giant_mario,
@@ -281,7 +335,7 @@ function solgryn_cameo_small_mario(_actor) {
         _actor.x += 2 - (_age - 250) * 0.5;
         _actor.y += 1;
         _actor.image_angle = 2;
-        _actor.guest_streak = (_age - 250) * 0.15;
+        _actor.guest_blur = (_age - 250) * 0.005;
         if (_actor.bbox_right < -100) {
             instance_destroy(_actor);
         }
@@ -317,7 +371,7 @@ function solgryn_cameo_giant_mario(_actor, _player) {
         _actor.x = floor(_actor.x + _actor.guest_hsp);
         _actor.guest_hsp += 1;
     }
-    _actor.guest_streak = abs(_actor.guest_hsp) * 0.5;
+    _actor.guest_blur = abs(_actor.guest_hsp) * 0.0025;
     if (_age > 90 && _actor.bbox_left > 700) {
         instance_destroy(_actor);
     }
@@ -346,8 +400,8 @@ function solgryn_cameo_liu_kang(_actor) {
         }
         var _burst = solgryn_cameo_spawn(SolgrynGuest.Fade, spr_shang_tsung_actor_blood_burst,
             _actor.x - 32, _actor.y - 64, false);
-        _burst.guest_life = 40;
-        _burst.guest_fade_from = 24;
+        _burst.guest_life = 41;
+        _burst.guest_fade_from = _burst.guest_life;
         for (var _index = 0; _index < 40; ++_index) {
             var _blood = solgryn_cameo_spawn(SolgrynGuest.Blood, spr_solgryn_late_cameos_blood,
                 _actor.x - 32, _actor.y - 64, true);
@@ -371,8 +425,10 @@ function solgryn_cameo_liu_kang(_actor) {
 
 function solgryn_cameo_missingno(_actor, _player) {
     var _age = _actor.guest_age;
-    var _elapsed = scene_steps * 20;
-    if (_elapsed div 50 != (_elapsed - 20) div 50 && _age > 1) {
+    var _elapsed = game_controller.frame_elapsed_us;
+    var _reset_caption = _actor.guest_trail_created;
+    _actor.guest_trail_created = _elapsed div 50000 != (_elapsed - delta_time) div 50000;
+    if (_actor.guest_trail_created) {
         solgryn_cameo_afterimage(_actor, spr_solgryn_late_cameos_missingno_trail, 0.1, 128 / 15);
     }
     if (_age >= 10 && _age <= 35) {
@@ -381,7 +437,7 @@ function solgryn_cameo_missingno(_actor, _player) {
         _actor.image_yscale = 3;
     }
     if (_age >= 35 && _age <= 210) {
-        _actor.y = floor(2550 + dsin(-scene_steps * 20 / 3) * 15);
+        _actor.y = floor(2550 + dsin(-((_elapsed div 1000) div 3)) * 15);
     }
     if (_age >= 210) {
         _actor.y -= 10;
@@ -420,7 +476,7 @@ function solgryn_cameo_missingno(_actor, _player) {
     }
     if (instance_exists(_actor.guest_caption)) {
         // G1287 clears the caption's opacity when the previous afterimage reaches age 1.
-        if ((_elapsed - 20) div 50 != (_elapsed - 40) div 50) {
+        if (_reset_caption) {
             _actor.guest_caption.image_alpha = 0;
         }
         if (_age <= 100) {
@@ -442,23 +498,26 @@ function solgryn_cameo_missingno(_actor, _player) {
 function solgryn_cameo_bomberman(_actor) {
     var _age = _actor.guest_age;
     var _old_y = _actor.y;
-    _actor.y += _actor.guest_vsp;
+    _actor.y = floor(_actor.y + _actor.guest_vsp);
     _actor.guest_vsp += 0.5;
-    if (_age >= 290) {
-        _actor.y += _actor.guest_vsp;
-        _actor.guest_vsp -= 0.5;
-    } else if (_actor.guest_vsp > 0 && _actor.guest_on_backdrop()) {
-        _actor.y = _old_y;
+    if (_actor.guest_vsp > 0 && _actor.guest_on_backdrop()) {
         _actor.guest_vsp = -5;
     }
+    if (_age >= 290) {
+        _actor.y = floor(_actor.y + _actor.guest_vsp);
+        _actor.guest_vsp -= 0.5;
+    }
+
     switch (_age) {
         case 35:
         case 80:
         case 150:
         case 200:
         case 245:
+            // G1321–1323 launch before Bomberman moves. G1326–1327 launch afterward.
             var _bomb = solgryn_cameo_spawn(SolgrynGuest.Bomb,
-                spr_solgryn_late_cameos_bomb, _actor.x, _actor.y, true);
+                spr_solgryn_late_cameos_bomb, _actor.x, _age <= 150 ? _old_y : _actor.y, true);
+            _bomb.guest_age = -1;
             _bomb.guest_hsp = _age == 35 ? -2 : ((_age == 80 || _age == 200) ? -6 : -4);
             _bomb.guest_vsp = _age == 35 ? -9 : ((_age == 80 || _age == 200) ? -11 : -10);
             break;
@@ -477,8 +536,8 @@ function solgryn_cameo_bomberman(_actor) {
 }
 
 function solgryn_cameo_bomb(_actor) {
-    _actor.x += _actor.guest_hsp;
-    _actor.y += _actor.guest_vsp;
+    _actor.x = floor(_actor.x + _actor.guest_hsp);
+    _actor.y = floor(_actor.y + _actor.guest_vsp);
     _actor.guest_vsp += 0.5;
     if (_actor.guest_on_backdrop() && _actor.y > 400) {
         if (_actor.guest_kind == SolgrynGuest.Bomb) {
@@ -531,16 +590,13 @@ function solgryn_cameo_sonic(_actor, _player) {
         _actor.guest_vsp = 0;
     }
     if ((_age + 250) mod 2 == 0 && _age > -250) {
-        var _spark = solgryn_cameo_spawn(SolgrynGuest.Fade, spr_solgryn_late_cameos_sonic_spark,
+        var _spark = solgryn_cameo_spawn(SolgrynGuest.SonicSpark, spr_solgryn_late_cameos_sonic_spark,
             _actor.x, _actor.y, false);
-        _spark.guest_life = 12;
-        _spark.guest_fade_from = 3;
+        _spark.guest_age = -1;
+        _spark.guest_next_x = _spark.x;
+        _spark.guest_next_y = _spark.y;
+        _spark.guest_rest_steps = 0;
         _spark.guest_hold_image = true;
-        _spark.image_index = irandom(3);
-        var _heading = irandom(359);
-        var _speed = 4 + (irandom(3) - irandom(3)) * 0.8;
-        _spark.guest_hsp = lengthdir_x(_speed, _heading);
-        _spark.guest_vsp = lengthdir_y(_speed, _heading);
     }
     var _trail = solgryn_cameo_spawn(SolgrynGuest.Fade, spr_solgryn_late_cameos_sonic_trail,
         _actor.x, _actor.y, false);
@@ -549,6 +605,29 @@ function solgryn_cameo_sonic(_actor, _player) {
     _trail.guest_fade_from = 12;
     if (_age >= 250 && _actor.bbox_bottom < 2280) {
         instance_destroy(_actor);
+    }
+}
+
+function solgryn_cameo_sonic_spark(_actor, _age) {
+    // G1137–1141 use fractional accumulators and wait ten stationary steps before destroying the spark.
+    if (_age == 1) {
+        var _heading = irandom(359);
+        var _speed_x = 4 + (irandom(3) - irandom(3)) * 0.8;
+        var _speed_y = 4 + (irandom(3) - irandom(3)) * 0.8;
+        _actor.guest_hsp = lengthdir_x(_speed_x, _heading);
+        _actor.guest_vsp = lengthdir_y(_speed_y, _heading);
+        _actor.image_index = irandom(3);
+    }
+    _actor.x = floor(_actor.guest_next_x);
+    _actor.y = floor(_actor.guest_next_y);
+    _actor.guest_next_x += _actor.guest_hsp;
+    _actor.guest_next_y += _actor.guest_vsp;
+    _actor.guest_hsp *= 0.9;
+    _actor.guest_vsp *= 0.9;
+    if (abs(round(_actor.guest_hsp)) + abs(round(_actor.guest_vsp)) == 0) {
+        if (++_actor.guest_rest_steps >= 10) {
+            instance_destroy(_actor);
+        }
     }
 }
 
@@ -572,17 +651,28 @@ function solgryn_late_cameos_step(_player, _fight_age) {
             continue;
         }
         var _age = ++_actor.guest_age;
+        if (!_actor.guest_hold_image) {
+            var _frame = max(0, (_actor.guest_animation - 1) div 100);
+            _actor.guest_animation += _actor.sprite_index == spr_solgryn_late_cameos_mario_run
+                ? 50 : round(sprite_get_speed(_actor.sprite_index) * 2);
+            var _one_shot = _actor.sprite_index == spr_solgryn_late_cameos_ryu_spin
+                || _actor.sprite_index == spr_solgryn_late_cameos_ryu_car_pose
+                || _actor.sprite_index == spr_solgryn_late_cameos_giant_mario
+                || _actor.sprite_index == spr_solgryn_late_cameos_liu_kang_hit
+                || _actor.sprite_index == spr_solgryn_late_cameos_bomberman
+                || _actor.sprite_index == spr_shang_tsung_actor_blood_burst;
+            _actor.image_index = _one_shot ? min(_frame, _actor.image_number - 1) : _frame mod _actor.image_number;
+        }
         switch (_actor.guest_kind) {
             case SolgrynGuest.Ryu:
                 solgryn_cameo_ryu(_actor);
                 break;
             case SolgrynGuest.Hadoken:
+                if (_age == 0) {
+                    _actor.guest_next_y = _actor.y;
+                }
                 if (_age > 0) {
-                    if (_actor.guest_on_backdrop() || _actor.bbox_top > 3000) {
-                        instance_destroy(_actor);
-                    } else {
-                        _actor.y += _actor.guest_vsp;
-                    }
+                    solgryn_cameo_hadoken(_actor);
                 }
                 break;
             case SolgrynGuest.Car:
@@ -654,12 +744,19 @@ function solgryn_late_cameos_step(_player, _fight_age) {
                 break;
             case SolgrynGuest.Bomb:
             case SolgrynGuest.SecondBomb:
-                solgryn_cameo_bomb(_actor);
+                if (_age > 0) {
+                    solgryn_cameo_bomb(_actor);
+                }
                 break;
             case SolgrynGuest.Sonic:
                 solgryn_cameo_sonic(_actor, _player);
                 if (_age == 230) {
                     _fight_age = 15000;
+                }
+                break;
+            case SolgrynGuest.SonicSpark:
+                if (_age > 0) {
+                    solgryn_cameo_sonic_spark(_actor, _age);
                 }
                 break;
             case SolgrynGuest.Fade:
@@ -681,18 +778,6 @@ function solgryn_late_cameos_step(_player, _fight_age) {
         }
         if (!instance_exists(_actor)) {
             continue;
-        }
-        if (!_actor.guest_hold_image) {
-            var _frame = floor(_actor.guest_animation);
-            if (_actor.sprite_index == spr_solgryn_late_cameos_mario_run) {
-                _actor.guest_animation += 0.5;
-            } else {
-                _actor.guest_animation += sprite_get_speed(_actor.sprite_index) / 50;
-            }
-            var _one_shot = _actor.sprite_index == spr_solgryn_late_cameos_ryu_car_pose
-                || _actor.sprite_index == spr_solgryn_late_cameos_giant_mario
-                || _actor.sprite_index == spr_shang_tsung_actor_blood_burst;
-            _actor.image_index = _one_shot ? min(_frame, _actor.image_number - 1) : _frame mod _actor.image_number;
         }
         if (_actor.guest_kind == SolgrynGuest.HydroPump && !_hydro_contact && _player != noone) {
             _hydro_contact = _player.boshy_mask_meeting(_actor);

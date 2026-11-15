@@ -13,10 +13,9 @@ show_boss_timer = game_has_item("Timer");
 
 fight_age = 0;
 scene_steps = 0;
-if (!struct_exists(global.run, "solgryn_route_steps")) {
-    global.run.solgryn_route_steps = 0;
+if (!struct_exists(global.run, "solgryn_route_seconds")) {
+    global.run.solgryn_route_seconds = 0;
 }
-attempt_steps = global.run.solgryn_route_steps;
 first_form_defeated = false;
 shield_active = false;
 target_x = 320;
@@ -68,7 +67,7 @@ solgryn_music_seek = function(_seconds, _resume = false) {
     }
 };
 
-solgryn_draw_history = function(_scene, _viewport) {
+solgryn_draw_history = function(_scene, _viewport, _mirror) {
     // PT_BlurAndAngle lets the preceding image show through the current one.
     var _width = game_controller.render_width;
     var _height = game_controller.render_height;
@@ -89,7 +88,7 @@ solgryn_draw_history = function(_scene, _viewport) {
         }
         _scene = history_surface;
     }
-    draw_surface_stretched(_scene, _viewport.left, _viewport.top, _viewport.width, _viewport.height);
+    game_controller.draw_scene_surface(_scene, _viewport, _mirror);
 };
 
 solgryn_hud_in_scene = function() {
@@ -122,7 +121,7 @@ draw_solgryn_readouts = function(_left, _top, _scale) {
         _line_y += 12 * _scale;
     }
     if (show_boss_timer) {
-        var _time_text = string(attempt_steps div 50) + " seconds";
+        var _time_text = string(global.run.solgryn_route_seconds) + " seconds";
         draw_boshy_text(_time_text, _right - string_length(_time_text) * 8 * _scale, _line_y, 0.3, _scale);
     }
 };

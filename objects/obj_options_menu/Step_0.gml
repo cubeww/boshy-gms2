@@ -7,7 +7,7 @@ if (keyboard_check_pressed(vk_escape) || keyboard_check_pressed(vk_f3)
 var _rows = controls_open ? bindings : options;
 var _vertical = 0;
 if (!capturing_key) {
-    _vertical = read_direction(vk_up, vk_down, vertical_repeat);
+    _vertical = read_direction(vk_up, vk_down, vertical_repeat, true);
     if (_vertical != 0) {
         selected_row = clamp(selected_row + _vertical, 0, array_length(_rows) - 1);
     }
@@ -95,7 +95,11 @@ if (struct_exists(_row, "setting")) {
     if (_value != _current || is_undefined(struct_get(global.settings, _row.setting))) {
         struct_set(global.settings, _row.setting, _value);
         if (_row.setting == "music_volume") {
-            audio_sound_gain(music_instance, _value / 100, 0);
+            game_controller.stage_music_volume = _value;
+            var _track = game_controller.stage_music_instance;
+            if (_track != -1 && (audio_is_playing(_track) || audio_is_paused(_track))) {
+                audio_sound_gain(_track, _value / 100, 0);
+            }
         } else if (_row.setting == "speech_volume" && speech_preview_instance != -1) {
             audio_sound_gain(speech_preview_instance, _value / 100, 0);
         }
@@ -105,6 +109,20 @@ if (struct_exists(_row, "setting")) {
 }
 
 switch (_row.action) {
+    case "frame_rate":
+        // Fusion G456–457 write one change per held-key event. G367 applies it on entry.
+        var _frame_rate = global.settings.frame_rate;
+        if (keyboard_check(vk_left) && _frame_rate > 50) {
+            --_frame_rate;
+        }
+        if (keyboard_check(vk_right) && _frame_rate < 1000) {
+            ++_frame_rate;
+        }
+        if (_frame_rate != global.settings.frame_rate) {
+            global.settings.frame_rate = _frame_rate;
+            game_settings_save();
+        }
+        break;
     case "display":
         if (keyboard_check_pressed(vk_left)) {
             game_controller.cycle_display_mode(-1);

@@ -1,0 +1,10 @@
+{
+  "$GMScript":"v1",
+  "%Name":"ear_rape_spike",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"ear_rape_spike",
+  "parent":{"name":"Player","path":"folders/Shared/Player.yy",},
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}

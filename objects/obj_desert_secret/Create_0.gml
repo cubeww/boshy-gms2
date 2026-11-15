@@ -6,19 +6,6 @@ shake_strength = 0;
 page_left = 0;
 page_top = 0;
 
-play_stage_track = function() {
-    var _cd = ninja_gaiden_selected_cd();
-    if (!is_undefined(_cd)) {
-        game_controller.start_stage_music(_cd[2], true, true, _cd[3]);
-    } else {
-        if (global.run.ninja_gaiden_cd > 0) {
-            global.run.ninja_gaiden_cd = 0;
-            global.run.music_position = 0;
-        }
-        game_controller.start_stage_music(snd_desert_secret_music);
-    }
-};
-
 update_view = function(_player, _floor) {
     if (_player != noone) {
         page_left = floor(_player.x / 640) * 640;

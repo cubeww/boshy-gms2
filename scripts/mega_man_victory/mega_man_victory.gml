@@ -5,7 +5,7 @@ function mega_man_victory_setup() {
     victory_clear_trophy_pending = false;
 }
 
-function mega_man_victory_begin(_attempt_steps) {
+function mega_man_victory_begin(_seconds) {
     if (victory_age >= 0) {
         return;
     }
@@ -25,7 +25,6 @@ function mega_man_victory_begin(_attempt_steps) {
     }
 
     // G544–545 and G565–566 use the timer at the final hit, before the outro runs.
-    var _seconds = _attempt_steps div 50;
     var _progress = game_current_progress();
     if (_seconds < _progress.mega_man_best_time) {
         _progress.mega_man_best_time = _seconds;

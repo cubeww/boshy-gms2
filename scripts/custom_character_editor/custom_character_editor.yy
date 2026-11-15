@@ -1,0 +1,13 @@
+{
+  "$GMScript":"v1",
+  "%Name":"custom_character_editor",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"custom_character_editor",
+  "parent":{
+    "name":"Menus",
+    "path":"folders/Menus.yy",
+  },
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}

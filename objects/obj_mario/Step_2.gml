@@ -24,11 +24,9 @@ if (!defeated) {
             audio_sound_set_track_position(game_controller.stage_music_instance, 8);
         }
     }
-    if (fight_age >= 400) {
-        timer_started = true;
-    }
-    if (timer_started) {
-        ++attempt_steps;
+    if (fight_age == 400) {
+        // G698 and G707 reset the timer on the room's existing one-second pulse.
+        attempt_start_second = game_controller.frame_seconds;
     }
     if (sprite_index == spr_mario_run || sprite_index == spr_mario_run_left) {
         // Fusion uses the midpoint of the 1–51 speed range for this static movement.
@@ -56,7 +54,7 @@ if (!defeated) {
         if (exit_age >= 0 && ++exit_age >= 50) {
             // Group 783 continues at the opening of VVVVVV.
             if (!teleporter_rush_exit()) {
-                global.run.boss_entry_steps = attempt_steps + victory_age;
+                global.run.boss_entry_seconds = game_controller.frame_seconds - attempt_start_second;
                 room_goto(rm_vvvvvv);
             }
             exit;

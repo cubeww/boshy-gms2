@@ -9,7 +9,7 @@ enum MegaManActor {
 function mega_man_attacks_setup() {
     secondary_hp = 25;
     secondary_meter_visible = false;
-    interlude_bomb_timer = 250;
+    interlude_bomb_wait_us = 250000;
     electric_fighter = noone;
     metal_fighter = noone;
     bomb_fighter = noone;
@@ -71,7 +71,7 @@ function mega_man_electric_step(_controller, _player) {
         enemy_vy = -15;
     }
     if (enemy_age >= 530) {
-        x = floor(380 + dcos((_controller.scene_steps * 20) div 5) * 220);
+        x = floor(380 + dcos(_controller.game_controller.frame_elapsed_us div 5000) * 220);
         if (enemy_cooldown >= 15) {
             mega_man_spawn_shot(MegaManHazard.SplitShot, x, y, 90, 3);
             enemy_cooldown = 0;
@@ -186,9 +186,9 @@ function mega_man_attacks_step(_player) {
     }
 
     if (fight_age >= 630) {
-        interlude_bomb_timer -= 20;
-        if (interlude_bomb_timer <= 0) {
-            interlude_bomb_timer += 250;
+        interlude_bomb_wait_us -= delta_time;
+        if (interlude_bomb_wait_us <= 0) {
+            interlude_bomb_wait_us += 250000;
             if (fight_age < 680) {
                 mega_man_spawn_bomb(x, y, irandom(1) - irandom(1));
                 audio_play_sound(snd_mega_man_ordnance_shoot, 1, false);

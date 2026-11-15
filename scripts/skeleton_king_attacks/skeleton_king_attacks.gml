@@ -99,6 +99,12 @@ function skeleton_king_attacks_step(_player) {
     if (blob_age >= 0) {
         skeleton_king_run_blob_pattern();
     }
+    // G812 emits one diamond from the King's mouth each step while RickRoll plays.
+    if (game_cd_is_playing(3)) {
+        var _mouth = skeleton_king_body_action_point();
+        skeleton_king_spawn_attack(SkeletonKingAttack.Diamond, spr_skeleton_king_diamond,
+            _mouth.x, _mouth.y, irandom(359), 15 + irandom(9));
+    }
 }
 
 function skeleton_king_run_attack_pattern(_player) {

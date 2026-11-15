@@ -14,7 +14,7 @@ function bomberman_draw_hud() {
         _text_top += 12;
     }
     if (show_boss_timer) {
-        var _time = string(scene_steps div 50) + " seconds";
+        var _time = string(game_controller.frame_seconds) + " seconds";
         draw_boshy_text(_time, 632 - string_length(_time) * 8, _text_top);
     }
     bomberman_victory_draw();

@@ -8,7 +8,9 @@ function sanicz_movement_step(_player) {
             }
             break;
         case 40:
-            game_controller.start_stage_music(snd_sanicz_music, false, false);
+            if (game_selected_cd() == 0) {
+                game_controller.start_stage_music(snd_sanicz_music, false, false);
+            }
             break;
         case 100:
         case 480:

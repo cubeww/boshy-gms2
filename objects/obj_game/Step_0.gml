@@ -22,7 +22,12 @@ if (global.window_restore_steps > 0 && !window_get_fullscreen()) {
 }
 
 var _menu = room == rm_options ? instance_find(obj_options_menu, 0) : noone;
-if (keyboard_check_pressed(vk_tab) && !keyboard_check(vk_alt) && (_menu == noone || !_menu.capturing_key)) {
+var _dresser = room == rm_dresser ? instance_find(obj_dresser_menu, 0) : noone;
+var _editor_open = _dresser != noone && !is_undefined(_dresser.custom_editor);
+var _music_input_free = !_editor_open && (_menu == noone || !_menu.capturing_key)
+    && (room != rm_wow || !wow_login_typing());
+var _cd_uses_tab = !_editor_open && game_collectible_music_step(id, _music_input_free);
+if (keyboard_check_pressed(vk_tab) && !keyboard_check(vk_alt) && _music_input_free && !_cd_uses_tab) {
     global.debug_overlay_visible = !global.debug_overlay_visible;
 }
 
@@ -63,14 +68,26 @@ if (room == rm_trophies) {
 }
 
 if (room == rm_dresser) {
-    if (_escape) {
-        game_return_from_menu();
-    }
     exit;
 }
 
 var _profile = global.profile;
 teleporter_rush_step();
+game_check_death_achievement(global.run.deaths);
+if (++achievement_check_steps == 100) {
+    achievement_check_steps = 0;
+    game_check_collection_achievements();
+}
+if (array_length(achievement_notifications) > 0) {
+    if (achievement_notification_age == 0) {
+        audio_play_sound(snd_tutorial_achievement_obtain, 1, false);
+        audio_play_sound(snd_tutorial_achievement_success, 1, false);
+    }
+    if (++achievement_notification_age == 226) {
+        array_delete(achievement_notifications, 0, 1);
+        achievement_notification_age = 0;
+    }
+}
 var _save_interval_us = 30000000;
 var _last_save_interval = floor(_profile.play_time_us / _save_interval_us);
 _profile.play_time_us += delta_time;
@@ -80,10 +97,14 @@ if (is_undefined(campaign_slot)) {
     campaign_slot.play_time_us += delta_time;
 }
 if (room == rm_desert || room == rm_desert_secret || room == rm_final_path || room == rm_solgryn) {
-    if (!struct_exists(global.run, "solgryn_route_steps")) {
-        global.run.solgryn_route_steps = 0;
+    if (!struct_exists(global.run, "solgryn_route_seconds")) {
+        global.run.solgryn_route_seconds = 0;
     }
-    ++global.run.solgryn_route_steps;
+    global.run.solgryn_route_seconds += frame_second_tick;
+}
+// WoW G586 and Cheetah Men G587 share the seconds shown by the Timer item.
+if (room == rm_wow || room == rm_cheetah_men) {
+    global.run.wow_timer_seconds += frame_second_tick;
 }
 refresh_window_caption();
 _profile.dirty = true;
@@ -107,7 +128,8 @@ if (_gradius_ship != noone && _gradius_ship.dead) {
     fade_stage_music();
 }
 
-if (_open_dresser || _open_trophies || _escape || keyboard_check_pressed(_keys.restart)) {
+var _restart = keyboard_check_pressed(_keys.restart) && (room != rm_wow || !wow_login_typing());
+if (_open_dresser || _open_trophies || _escape || _restart) {
     if (teleporter_rush_active()) {
         teleporter_rush_return();
         exit;
@@ -123,6 +145,7 @@ if (_open_dresser || _open_trophies || _escape || keyboard_check_pressed(_keys.r
     } else if (_escape) {
         room_goto(rm_options);
     } else {
+        global.cd_restart = { room_id: room, position: global.run.music_position };
         var _run = global.run;
         var _restart_run = _run.restart_run;
         if (is_undefined(_restart_run) || _run.has_checkpoint) {
@@ -130,8 +153,11 @@ if (_open_dresser || _open_trophies || _escape || keyboard_check_pressed(_keys.r
         } else {
             _restart_run.deaths = _run.deaths;
             _restart_run.world_deaths = _run.world_deaths;
-            if (struct_exists(_run, "solgryn_route_steps")) {
-                _restart_run.solgryn_route_steps = _run.solgryn_route_steps;
+            if (struct_exists(_run, "solgryn_route_seconds")) {
+                _restart_run.solgryn_route_seconds = _run.solgryn_route_seconds;
+            }
+            if (room == rm_cheetah_men && _restart_run.room_id == rm_wow) {
+                _restart_run.wow_timer_seconds = _run.wow_timer_seconds;
             }
             if (room == rm_gradius || room == rm_desert || room == rm_desert_secret || room == rm_final_path
                 || room == rm_solgryn || room == rm_credits || room == rm_prize_room || room == rm_teleporter

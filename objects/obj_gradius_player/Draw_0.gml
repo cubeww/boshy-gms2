@@ -1,7 +1,7 @@
 if (!dead) {
     var _idle = character.poses[PlayerPose.Idle];
     var _frame = rider_frame;
-    if (character.sprite_right != spr_boshy_right) {
+    if (character.sprite_right != spr_boshy_right || struct_exists(character, "custom")) {
         var _count = array_length(_idle.frames);
         _frame = floor(max(0, scene_steps - 1) * _idle.rate);
         if (_frame >= _count) {
@@ -9,7 +9,12 @@ if (!dead) {
             _frame = _idle.loop ? _loop_start + (_frame - _loop_start) mod (_count - _loop_start) : _count - 1;
         }
     }
-    draw_sprite(character.sprite_right, _idle.frames[_frame], x, y);
+    var _sprite = arthur_armor_lost ? spr_stock_arthur_unarmored_right : character.sprite_right;
+    if (struct_exists(character, "custom")) {
+        game_character_draw(character, PlayerPose.Idle, _idle.frames[_frame], 1, x, y);
+    } else {
+        draw_sprite(_sprite, _idle.frames[_frame], x, y);
+    }
 }
 draw_sprite_ext(sprite_index, image_index, x, y, 2 * image_xscale, 2 * image_yscale,
     image_angle, image_blend, image_alpha);

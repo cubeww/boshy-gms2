@@ -1,0 +1,9 @@
+{
+  "$GMShader":"",
+  "%Name":"shd_chest_view",
+  "name":"shd_chest_view",
+  "parent":{"name":"Rendering","path":"folders/Shared/Rendering.yy",},
+  "resourceType":"GMShader",
+  "resourceVersion":"2.0",
+  "type":1,
+}

@@ -62,7 +62,13 @@ function game_profile_read_progress(_progress, _section) {
     _progress.credits_seen = ini_read_real(_section, "CreditsSeen", 0) == 1;
     _progress.gastly_dismissed = ini_read_real(_section, "GastlyDismissed", 1) != 0;
     _progress.mega_man_world_cue_played = ini_read_real(_section, "MegaManWorldCuePlayed", 0) != 0;
-    _progress.ninja_gaiden_cd = clamp(floor(ini_read_real(_section, "NinjaGaidenCD", 0)), 0, 12);
+    var _playing_cd = floor(ini_read_real(_section, "PlayingCD", ini_read_real(_section, "NinjaGaidenCD", 0)));
+    _progress.playing_cd = _playing_cd == CUSTOM_THEME_CD ? CUSTOM_THEME_CD : clamp(_playing_cd, 0, 12);
+    _progress.wow_account_name = wow_login_filter(ini_read_string(_section, "WoWAccountName", ""));
+    _progress.cheetah_men_deaths = game_profile_read_total("CheetahDeaths", _section);
+    if (ini_key_exists(_section, "MixerFrequencyOffset")) {
+        _progress.mixer_frequency_offset = game_mixer_normalize_offset(ini_read_real(_section, "MixerFrequencyOffset", 0));
+    }
 }
 
 function game_profile_write_progress(_progress, _section) {
@@ -121,7 +127,18 @@ function game_profile_write_progress(_progress, _section) {
     }
     ini_write_real(_section, "GastlyDismissed", _progress.gastly_dismissed ? 1 : 0);
     ini_write_real(_section, "MegaManWorldCuePlayed", _progress.mega_man_world_cue_played ? 1 : 0);
-    ini_write_real(_section, "NinjaGaidenCD", _progress.ninja_gaiden_cd);
+    ini_write_real(_section, "PlayingCD", _progress.playing_cd);
+    if (_progress.wow_account_name != "") {
+        ini_write_string(_section, "WoWAccountName", _progress.wow_account_name);
+    } else if (ini_key_exists(_section, "WoWAccountName")) {
+        ini_key_delete(_section, "WoWAccountName");
+    }
+    if (_progress.cheetah_men_deaths > 0) {
+        ini_write_string(_section, "CheetahDeaths", string_format(_progress.cheetah_men_deaths, 0, 0));
+    }
+    if (!is_undefined(_progress.mixer_frequency_offset)) {
+        ini_write_real(_section, "MixerFrequencyOffset", _progress.mixer_frequency_offset);
+    }
 }
 
 function game_profile_load() {
@@ -137,9 +154,11 @@ function game_profile_load() {
             solgryn_best_time: 9999, solgryn_deaths: 0, credits_seen: false,
             exploration: {}, teleporter_unlocked: false, boss_rush_clears: {}, boss_rush_seconds: 0, boss_rush_deaths: 0,
             vvvvvv_gravity: 1, vvvvvv_gravity_flip: false,
-            gastly_dismissed: true, mega_man_world_cue_played: false, ninja_gaiden_cd: 0
+            gastly_dismissed: true, mega_man_world_cue_played: false, playing_cd: 0, wow_account_name: "",
+            cheetah_men_deaths: 0, mixer_frequency_offset: undefined
         },
         character_id: CHARACTER_BOSHY,
+        custom_character: "",
         character_unlocks: {},
         campaign_slots: [],
         dirty: false
@@ -160,6 +179,7 @@ function game_profile_load() {
         teleporter_restore_legacy_exploration(_profile.practice, noone);
     }
     var _character_id = ini_read_real("License", "Character", CHARACTER_BOSHY);
+    _profile.custom_character = ini_read_string("License", "CustomCharacter", "");
     var _selected_character = undefined;
     var _catalog = dresser_catalog();
     for (var _i = 0; _i < array_length(_catalog); ++_i) {
@@ -172,7 +192,8 @@ function game_profile_load() {
         }
     }
     ini_close();
-    if (!is_undefined(_selected_character) && game_character_status(_selected_character, _profile) == "available") {
+    if ((_character_id == CHARACTER_CUSTOM && custom_character_available(_profile.custom_character))
+        || (!is_undefined(_selected_character) && game_character_status(_selected_character, _profile) == "available")) {
         _profile.character_id = _character_id;
     }
     return _profile;
@@ -189,6 +210,7 @@ function game_profile_save() {
     ini_write_string("Stats", "PlayTimeUS", string_format(_profile.play_time_us, 0, 0));
     ini_write_real("Stats", "TitleSlot", _profile.title_slot);
     ini_write_real("License", "Character", _profile.character_id);
+    ini_write_string("License", "CustomCharacter", _profile.custom_character);
 
     var _character_unlocks = struct_get_names(_profile.character_unlocks);
     for (var _i = 0; _i < array_length(_character_unlocks); ++_i) {
@@ -213,16 +235,33 @@ function game_trophy_is_unlocked(_id, _progress = undefined) {
     return struct_exists(_progress.trophies, _id);
 }
 
-function game_trophy_unlock(_id) {
-    if (!game_profile_id_valid(_id) || game_trophy_is_unlocked(_id)) {
+function game_trophy_unlock(_id, _progress = undefined) {
+    if (is_undefined(_progress)) {
+        _progress = game_current_progress();
+    }
+    if (!game_profile_id_valid(_id) || game_trophy_is_unlocked(_id, _progress)) {
         return false;
     }
 
-    var _progress = game_current_progress();
     struct_set(_progress.trophies, _id, true);
     global.profile.dirty = true;
     game_profile_save();
     return true;
+}
+
+function game_award_trophy(_id, _title, _progress = undefined) {
+    if (game_trophy_unlock(_id, _progress) && _title != "") {
+        with (obj_game) {
+            array_push(achievement_notifications, _title);
+        }
+    }
+}
+
+function game_check_death_achievement(_deaths, _progress = undefined, _notify = true) {
+    // Prehistorik G486 uses the current save's Stats/Deaths and a strict threshold.
+    if (_deaths > 9000) {
+        game_award_trophy("Over9000Deaths", _notify ? "Vegeta? Death\nlevel?!" : "", _progress);
+    }
 }
 
 function game_has_item(_id, _progress = undefined) {
@@ -244,4 +283,36 @@ function game_collect_item(_id, _trophy_id = "") {
         game_profile_save();
     }
     return true;
+}
+
+function game_has_collectible_set(_items, _progress) {
+    for (var _i = 0; _i < array_length(_items); ++_i) {
+        if (!game_has_item(_items[_i], _progress)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+function game_check_collection_achievements(_progress = undefined, _notify = true) {
+    // Prehistorik G504–505 check both collections in the active save.
+    static _secret_items = ["AwesomeSauce", "Mixer", "Rupees", "Scouter", "Gastly", "Metal Gear", "Cake"];
+    static _cds = [
+        "Lalalalalala CD", "Trololol CD", "RickRoll CD", "Chocolate CD", "Barrel Roll CD",
+        "Keyboard Cat CD", "Hamster CD", "Wily CD", "Cookie CD", "Sax CD"
+    ];
+    if (is_undefined(_progress)) {
+        _progress = game_current_progress();
+    }
+    if (!game_trophy_is_unlocked("AllSecretItems", _progress)
+        && game_has_collectible_set(_secret_items, _progress)) {
+        game_award_trophy("AllSecretItems", _notify ? "Secretly secret!" : "", _progress);
+    }
+
+    // The original checks Chicken CD without awarding it. Kid Icarus supplies LIVE CD.
+    if (!game_trophy_is_unlocked("AllCDs", _progress)
+        && (game_has_item("LIVE CD", _progress) || game_has_item("Chicken CD", _progress))
+        && game_has_collectible_set(_cds, _progress)) {
+        game_award_trophy("AllCDs", _notify ? "Music Master!" : "", _progress);
+    }
 }

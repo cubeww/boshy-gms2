@@ -1,5 +1,6 @@
 var _top = camera_get_view_y(view_camera[0]);
-if (!credits_near_view(y, _top, 400) && !array_length(effects)) {
+var _bounds = credits_sprite_canvas_bounds(sprite_index, x, y, image_xscale, image_yscale, image_angle);
+if (!credits_bounds_visible(_bounds, _top, _top + 480) && !array_length(effects)) {
     exit;
 }
 

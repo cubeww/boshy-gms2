@@ -112,8 +112,30 @@ function green_greens_events_step(_player) {
     ++green_event_steps;
     green_greens_step_lift(_player);
     green_greens_step_bounce_blocks(_player);
+    if (green_greens_step_cloud_traps(_player)) {
+        _player = noone;
+    }
     green_greens_step_chases(_player);
     green_greens_step_switch_spikes(_jumped);
+}
+
+function green_greens_step_cloud_traps(_player) {
+    var _hit = false;
+    with (obj_green_greens_cloud_trap) {
+        if (cloud_trap_ticks > 0) {
+            // G990's forced animation advances past 100 at speed 40 and loops on its last frame.
+            cloud_trap_ticks = min(cloud_trap_ticks + 1, 11);
+            image_index = 1 + (cloud_trap_ticks * 40 - 1) div 100;
+        }
+        if (_player != noone && _player.boshy_mask_meeting(id)) {
+            if (cloud_trap_ticks == 0) {
+                cloud_trap_ticks = 1;
+                image_index = 1;
+            }
+            _hit = true;
+        }
+    }
+    return _hit && _player.die();
 }
 
 function green_greens_step_lift(_player) {

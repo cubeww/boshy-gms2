@@ -14,6 +14,13 @@ var _draw_choices = function(_choices, _selected, _alpha = 1) {
     }
 };
 
+var _mirrored = game_view_mirrored();
+var _matrix = matrix_get(matrix_world);
+if (_mirrored) {
+    // The title's Viewport sits between the scene and the menu buttons.
+    matrix_set(matrix_world, matrix_multiply(matrix_build(640, 0, 0, 0, 0, 0, -1, 1, 1), _matrix));
+}
+
 if (attract_steps < 610) {
     var _scale = 640 / camera_width;
     var _left = camera_x - camera_width / 2;
@@ -54,7 +61,6 @@ if (attract_steps < 610) {
     draw_sprite_ext(spr_title_background, 0, -112, 0, 1, 1, 0, c_white, 1 - storm_transparency / 128);
     draw_sprite_ext(spr_title_status_panel, 0, 0, 192, 1, 1, 0, c_white, 0.23);
     draw_sprite(spr_title_platform, 0, 398, 288);
-    title_draw_collectables();
     draw_sprite(spr_boshy_right, (prompt_steps div 8) mod 2, 446, 287);
     draw_boshy_text(string_copy("It's BOSHY time!", 1, min(16, prompt_steps div 2)), 479, 267);
     draw_sprite_ext(spr_title_logo, 0, 299, 92, logo_scale, logo_scale, 0, c_white, 1);
@@ -68,9 +74,6 @@ if (attract_steps < 610) {
 
     if (menu_page == TitlePage.Prompt && (prompt_steps div 30) mod 2 == 0) {
         _draw_prompt_font("PRESS START", 232, 384);
-    }
-    if (menu_page == TitlePage.Main) {
-        _draw_choices(main_choices, menu_index);
     }
     if (menu_page == TitlePage.Slots || menu_page == TitlePage.DeleteSlot || menu_page == TitlePage.Difficulty) {
         var _on_slots = menu_page != TitlePage.Difficulty;
@@ -234,10 +237,6 @@ if (attract_steps < 610) {
             } else {
                 draw_sprite(spr_title_save_detail, 0, 253, 241);
             }
-            _draw_choices(slot_choices, menu_index);
-        } else {
-            _draw_choices(slot_choices, -1, 0.3);
-            _draw_choices(difficulty_choices, menu_index);
         }
         if (_has_save) {
             var _difficulty = game_campaign_difficulty_name(_save.difficulty);
@@ -247,6 +246,27 @@ if (attract_steps < 610) {
         } else {
             draw_boshy_text("Save not active", 260, 414);
         }
+    }
+}
+
+if (_mirrored) {
+    matrix_set(matrix_world, _matrix);
+}
+
+if (attract_steps >= 610) {
+    title_draw_collectables();
+    switch (menu_page) {
+        case TitlePage.Main:
+            _draw_choices(main_choices, menu_index);
+            break;
+        case TitlePage.Slots:
+        case TitlePage.DeleteSlot:
+            _draw_choices(slot_choices, menu_index);
+            break;
+        case TitlePage.Difficulty:
+            _draw_choices(slot_choices, -1, 0.3);
+            _draw_choices(difficulty_choices, menu_index);
+            break;
     }
     if (menu_page == TitlePage.Main || menu_page == TitlePage.Slots || menu_page == TitlePage.Difficulty) {
         var _choices = main_choices;

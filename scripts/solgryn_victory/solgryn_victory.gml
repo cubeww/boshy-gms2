@@ -1,7 +1,7 @@
 function solgryn_victory_setup() {
     victory_age = -1;
     victory_trophy_age = -1;
-    victory_trophy_pending = false;
+    victory_clear_at_us = -1;
     victory_new_record = false;
     victory_audio = [];
 }
@@ -17,14 +17,15 @@ function solgryn_victory_begin() {
     fight_age = 900000;
     victory_age = 0;
     var _progress = game_current_progress();
-    var _seconds = attempt_steps div 50;
+    var _seconds = global.run.solgryn_route_seconds;
     if (_seconds < _progress.solgryn_best_time) {
         _progress.solgryn_best_time = _seconds;
         global.profile.dirty = true;
         victory_new_record = true;
     }
-    victory_trophy_pending = game_trophy_unlock("Solgryn");
-    if (victory_new_record && !victory_trophy_pending) {
+    if (game_trophy_unlock("Solgryn")) {
+        victory_clear_at_us = game_controller.frame_elapsed_us + 2000000;
+    } else if (victory_new_record) {
         game_profile_save();
     }
     array_push(victory_audio, audio_play_sound(snd_solgryn_victory_voice, 1, false));
@@ -45,9 +46,9 @@ function solgryn_victory_step(_player) {
     if (victory_trophy_age >= 0 && ++victory_trophy_age >= 226) {
         victory_trophy_age = -1;
     }
-    // G583 presents a newly earned trophy on the next two-second timer pulse.
-    if (victory_trophy_pending && scene_steps mod 100 == 0) {
-        victory_trophy_pending = false;
+    // G583 starts its two-second timer once the clear is pending.
+    if (victory_clear_at_us >= 0 && game_controller.frame_elapsed_us >= victory_clear_at_us) {
+        victory_clear_at_us = -1;
         victory_trophy_age = 0;
         array_push(victory_audio, audio_play_sound(snd_tutorial_achievement_obtain, 1, false));
         array_push(victory_audio, audio_play_sound(snd_tutorial_achievement_success, 1, false));

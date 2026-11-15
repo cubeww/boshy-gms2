@@ -6,22 +6,13 @@ if (_player != noone && hit_points > 0 && _player.boshy_mask_meeting(id) && _pla
     _player = noone;
 }
 var _alive = _player != noone && !_player.dead;
-var _cd_key = ord("9");
 
-if (_alive) {
-    if (fight_age < 490 && keyboard_check_pressed(ord("S"))) {
-        fight_age = 489;
-        x = 574;
-        boss_target_x = 574;
-        boss_target_y = 371;
-        shang_tsung_flash();
-    }
-    if (hit_points > 0 && keyboard_check_pressed(_cd_key)
-        && !game_key_is_bound(global.settings.keys, _cd_key) && game_has_item("Wily CD")) {
-        global.run.mega_man_world_wily_cd = !global.run.mega_man_world_wily_cd;
-        global.run.music_position = 0;
-        start_fight_music();
-    }
+if (_alive && fight_age < 490 && keyboard_check_pressed(ord("S"))) {
+    fight_age = 489;
+    x = 574;
+    boss_target_x = 574;
+    boss_target_y = 371;
+    shang_tsung_flash();
 }
 
 var _previous_age = fight_age;
@@ -47,13 +38,18 @@ if (hit_points > 0) {
             case 230: add_dialogue(["I herd u liek", "mudkipz..."]); break;
             case 450: add_dialogue(["Here is one!"]); break;
             case 490:
-                attempt_start_steps = scene_steps;
-                attempt_steps = 0;
+                // G682 resets the seconds counter without restarting the room's pulse.
+                timer_base_seconds = -game_controller.frame_seconds;
                 shang_tsung_pose(12);
                 shang_spawn_intro(_player);
                 audio_play_sound(snd_shang_tsung_mudkip_call, 2, false);
-                if (!global.run.mega_man_world_wily_cd) {
-                    start_fight_music();
+                // G683–684 stop the introduction, then start Wasteland if channel 2 is silent.
+                if (intro_music != -1 && audio_is_playing(intro_music)) {
+                    audio_stop_sound(intro_music);
+                }
+                intro_music = -1;
+                if (!game_controller.stage_music_is_playing()) {
+                    game_controller.start_stage_music(snd_shang_tsung_music, false, true);
                 }
                 break;
             case 510: audio_play_sound(snd_shang_tsung_fight, 2, false); break;
@@ -78,13 +74,8 @@ if (hit_points > 0) {
     shang_tsung_victory_begin(_player);
 }
 
-if (fight_age < 490) {
-    attempt_steps = global.run.boss_entry_steps + scene_steps;
-} else if (victory_age < 600) {
-    attempt_steps = (scene_steps div 50 - attempt_start_steps div 50) * 50;
-}
 if (victory_age >= 0 && _alive) {
-    shang_tsung_victory_step(_player, attempt_steps);
+    shang_tsung_victory_step(_player, timer_base_seconds + game_controller.frame_seconds);
 }
 shang_tsung_arena_step(_player, victory_age < 0 && fight_age >= 560 && !awaiting_landing);
 if (_alive) {

@@ -10,8 +10,6 @@ if (_player != noone && _player.dead) {
 var _fighting = victory_age < 0;
 solgryn_actor_update_orbit();
 if (_fighting) {
-    // The native seconds clock keeps running through the three Desert route rooms.
-    attempt_steps = global.run.solgryn_route_steps;
     ++fight_age;
     // G695 places the box before the movement and attack events.
     if (fight_age == 1450) {

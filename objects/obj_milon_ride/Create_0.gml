@@ -31,7 +31,7 @@ advance_milon_ride = function(_player, _stage_steps) {
         vertical_mode = -1;
         vertical_steps = 0;
     }
-    if (keyboard_check_pressed(vk_down) && vertical_mode != 1) {
+    if (keyboard_check_pressed(global.settings.keys.down) && vertical_mode != 1) {
         vertical_mode = 1;
         vertical_steps = 0;
     }

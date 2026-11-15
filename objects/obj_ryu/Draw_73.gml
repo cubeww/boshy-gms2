@@ -19,7 +19,8 @@ if (fight_age >= 0 && !defeated) {
         if (show_boss_health) {
             _status += "\n";
         }
-        _status += string(attempt_steps div 50) + " seconds";
+        var _seconds = attempt_start_second < 0 ? 0 : game_controller.frame_seconds - attempt_start_second;
+        _status += string(_seconds) + " seconds";
     }
     if (_status != "") {
         draw_boshy_text(_status, _left + 316, _top + 12);
@@ -39,12 +40,17 @@ if (fight_age >= 0 && !defeated) {
 }
 
 if (trophy_index < array_length(trophy_titles)) {
-    var _alpha = 1 - max(0, trophy_steps - 200) / 26;
-    draw_sprite_ext(spr_tutorial_achievement_banner, 0, _left + 434 * _scale, _top + 7 * _scale,
-        _scale, _scale, 0, c_white, _alpha);
-    draw_sprite_ext(spr_trophy_icon, 1, _left + 438 * _scale, _top + 12 * _scale,
-        0.5 * _scale, 0.5 * _scale, 0, c_white, _alpha);
-    draw_boshy_text(string_copy(trophy_titles[trophy_index], 1, trophy_steps),
-        _left + 458 * _scale, _top + 22 * _scale, _alpha, _scale);
+    chest_draw_overlay(function(_view) {
+        var _left = _view.left;
+        var _top = _view.top;
+        var _scale = _view.scale_x;
+        var _alpha = 1 - max(0, trophy_steps - 200) / 26;
+        draw_sprite_ext(spr_tutorial_achievement_banner, 0, _left + 434 * _scale, _top + 7 * _scale,
+            _scale, _scale, 0, c_white, _alpha);
+        draw_sprite_ext(spr_trophy_icon, 1, _left + 438 * _scale, _top + 12 * _scale,
+            0.5 * _scale, 0.5 * _scale, 0, c_white, _alpha);
+        draw_boshy_text(string_copy(trophy_titles[trophy_index], 1, trophy_steps),
+            _left + 458 * _scale, _top + 22 * _scale, _alpha, _scale);
+    });
 }
 prehistorik_pickups_draw_hud();

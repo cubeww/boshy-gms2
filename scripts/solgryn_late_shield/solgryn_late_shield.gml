@@ -3,6 +3,9 @@ function solgryn_late_shield_init() {
     shield_overload_age = -1;
     shield_barrier = noone;
     shield_rocket = noone;
+    shield_lift_turn_us = 150000;
+    shield_lift_move_us = 100000;
+    shield_lift_carry_us = 100000;
 }
 
 function solgryn_late_shield_try_upper_gate(_player, _old_y) {
@@ -38,19 +41,27 @@ function solgryn_late_shield_try_upper_gate(_player, _old_y) {
 function solgryn_late_shield_move_platforms(_player, _age) {
     // Active 46 and the steel lift use the same Superdown sprite (image 311).
     static _superdown = { left: -8, top: 4, right: 8, bottom: 9 };
-    var _frame_ms = 1000 / game_get_speed(gamespeed_fps);
-    var _time = scene_steps * _frame_ms;
-    var _old_time = _time - _frame_ms;
     var _alive = instance_exists(_player);
     if (_age >= 5400 && _age <= 5999 && instance_exists(inst_solgryn_arena_shield_lift)) {
         var _lift = inst_solgryn_arena_shield_lift;
-        if (_age >= 5500 && floor(_time / 150) != floor(_old_time / 150)) {
-            --_lift.image_angle;
-            solgryn_shake(10);
+        if (_age >= 5500) {
+            shield_lift_turn_us -= delta_time;
+            if (shield_lift_turn_us <= 0) {
+                shield_lift_turn_us += 150000;
+                --_lift.image_angle;
+                solgryn_shake(10);
+            }
         }
-        if (floor(_time / 100) != floor(_old_time / 100)) {
+        shield_lift_move_us -= delta_time;
+        if (shield_lift_move_us <= 0) {
+            shield_lift_move_us += 100000;
             ++_lift.y;
-            if (_alive && _player.probe_overlaps(_superdown, _lift)) {
+        }
+        // G786 has its own timer and evaluates the rider after the lift moves.
+        if (_alive && _player.probe_overlaps(_superdown, _lift)) {
+            shield_lift_carry_us -= delta_time;
+            if (shield_lift_carry_us <= 0) {
+                shield_lift_carry_us += 100000;
                 ++_player.y;
                 _player.refresh_collision_probes();
             }
@@ -281,7 +292,7 @@ function solgryn_late_shield_step(_player, _age) {
     if (instance_exists(shield_barrier)) {
         shield_barrier.x = x;
         shield_barrier.y = y;
-        var _room_time_ms = scene_steps * 1000 / game_get_speed(gamespeed_fps);
+        var _room_time_ms = game_controller.frame_elapsed_us div 1000;
         var _scale = 2 + dsin(_room_time_ms) * 0.15 - shield_hits * 0.004;
         shield_barrier.image_xscale = _scale;
         shield_barrier.image_yscale = _scale;
@@ -365,6 +376,16 @@ function solgryn_late_ship_step(_player, _age) {
     if (!instance_exists(_player)) {
         return;
     }
+    var _keys = global.settings.keys;
+    var _fire_tick = false;
+    if (keyboard_check(_keys.shoot) && instance_number(obj_bullet) < 18) {
+        // G1361 checks held fire and the bullet cap before advancing its timer.
+        _ship.fire_timer_us -= delta_time;
+        if (_ship.fire_timer_us <= 0) {
+            _ship.fire_timer_us += 50000;
+            _fire_tick = true;
+        }
+    }
     if (!_ship.boarded && _player.boshy_mask_meeting(_ship)) {
         _ship.boarded = true;
         with (obj_solgryn_late_shield_marker) {
@@ -378,10 +399,10 @@ function solgryn_late_ship_step(_player, _age) {
     }
 
     // G1352–1358 apply discrete lateral thrust, rounded vertical travel, and damping.
-    var _keys = global.settings.keys;
-    var _up = keyboard_check(vk_up);
-    var _down = keyboard_check(vk_down);
-    var _held_x = keyboard_check(_keys.right) - keyboard_check(_keys.left);
+    var _up = keyboard_check(_keys.up);
+    var _down = keyboard_check(_keys.down);
+    var _held_x = keyboard_check(game_horizontal_key(_keys, true))
+        - keyboard_check(game_horizontal_key(_keys, false));
     _ship.image_index = _down ? 2 : (_up ? 1 : 0);
     _ship.x += _held_x * (3 + _ship.flight_speed);
     _ship.vertical_speed += (_down - _up) * _ship.flight_speed;
@@ -396,15 +417,17 @@ function solgryn_late_ship_step(_player, _age) {
     _player.y = _ship.y;
     _player.refresh_collision_probes();
 
-    var _step_ms = 1000 / game_get_speed(gamespeed_fps);
     var _character = _player.character;
-    if (keyboard_check(_keys.shoot) && instance_number(obj_bullet) < 18
-        && floor(scene_steps * _step_ms / 50) != floor((scene_steps - 1) * _step_ms / 50)) {
+    if (_fire_tick) {
         var _shoot_clip = _character.poses[PlayerPose.Shoot];
         _ship.shoot_steps = ceil(array_length(_shoot_clip.frames) / _shoot_clip.rate);
         var _shot = global.settings.special_shot_graphics ? _character.projectile_sprite : spr_boshy_bullet;
         var _bullet = instance_create_depth(_player.x + _character.muzzle_x, _player.y + _character.muzzle_y,
-            _player.depth, obj_bullet, { travel_direction: 1, sprite_index: _shot });
+            _player.depth, obj_bullet, {
+                travel_direction: 1,
+                sprite_index: _shot,
+                custom_bullet: custom_character_bullet_clip(_character)
+            });
         _bullet.travel_speed = 12.5;
         var _sound = global.settings.special_shoot_sounds ? _character.shoot_sound : snd_shoot;
         if (_sound != noone) {
