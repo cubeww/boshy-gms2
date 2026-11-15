@@ -40,19 +40,12 @@ if (_player.bbox_bottom >= 480) {
 
 var _portal_x = portal.x;
 var _portal_y = portal.y;
-if (portal_steps < 0) {
-    // The emitter and base are separated by a transparent gap in the idle sprite.
-    var _hits_emitter = _player.bbox_right >= _portal_x - 24 && _player.bbox_left < _portal_x + 24
-        && _player.bbox_bottom >= _portal_y - 72 && _player.bbox_top < _portal_y - 43;
-    var _hits_base = _player.bbox_right >= _portal_x - 19 && _player.bbox_left < _portal_x + 19
-        && _player.bbox_bottom >= _portal_y - 3 && _player.bbox_top < _portal_y + 13;
-    if (_hits_emitter || _hits_base) {
-        _player.input_locked = true;
-        _player.hsp = 0;
-        portal_steps = 0;
-        portal.image_index = 1;
-        audio_play_sound(snd_tutorial_teleport, 1, false);
-    }
+if (portal_steps < 0 && _player.boshy_mask_meeting(portal)) {
+    _player.input_locked = true;
+    _player.hsp = 0;
+    portal_steps = 0;
+    portal.image_index = 1;
+    audio_play_sound(snd_tutorial_teleport, 1, false);
 }
 
 if (portal_steps >= 0) {

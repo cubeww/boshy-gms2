@@ -15,7 +15,7 @@ function desert_push_walls_step(_player, _family, _hinge) {
     if (_push > 0) {
         // Active 23 has two coincident instances. The group pushes the selected player once.
         _player.x += 2;
-        _player.hsp = _push;
+        _player.force_horizontal_speed(_push);
     }
     with (obj_desert_push_wall) {
         if (wall_family != _family) {

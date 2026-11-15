@@ -71,7 +71,7 @@ function missingno_pattern_wrap(_player) {
     _vine.image_xscale -= 0.0025;
     if (_vine.wrap_stun_steps >= 5 && _player.boshy_mask_meeting(_vine)) {
         // G826–827 handle both rounded horizontal speeds with the same stun.
-        _player.hsp = 0;
+        _player.force_horizontal_speed(0);
         _player.vsp = 0;
         _vine.wrap_stun_steps = 0;
         ++_vine.wrap_release;

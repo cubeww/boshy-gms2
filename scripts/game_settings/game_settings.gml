@@ -101,6 +101,7 @@ function game_settings_load() {
         show_fps: false,
         show_deaths: false,
         auto_fire: undefined,
+        low_input_latency: false,
         display_mode: 1,
         frame_rate: 50,
         keys: {
@@ -134,6 +135,7 @@ function game_settings_load() {
     if (_auto_fire == 0 || _auto_fire == 1) {
         _settings.auto_fire = _auto_fire == 1;
     }
+    _settings.low_input_latency = game_settings_read_integer("Options", "LowInputLatency", 0) == 1;
     var _display_mode = game_settings_read_integer("Options", "DisplayMode", _settings.display_mode);
     if (_display_mode >= 0 && _display_mode <= 3) {
         _settings.display_mode = _display_mode;
@@ -208,6 +210,7 @@ function game_settings_save() {
     if (!is_undefined(_settings.auto_fire)) {
         ini_write_string("Options", "AutoFire", _settings.auto_fire ? "1" : "0");
     }
+    ini_write_string("Options", "LowInputLatency", _settings.low_input_latency ? "1" : "0");
     ini_write_string("Options", "DisplayMode", string_format(_settings.display_mode, 0, 0));
     ini_write_string("Options", "FrameRate", string_format(_settings.frame_rate, 0, 0));
 

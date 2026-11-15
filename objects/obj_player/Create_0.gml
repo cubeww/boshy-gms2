@@ -71,6 +71,8 @@ shoot_pose_remaining = 0;
 shoot_hold_us = 0;
 
 hsp = 0;
+horizontal_speed_forced = false;
+horizontal_speed_before_input = undefined;
 vsp = 0;
 facing = 1;
 air_jump_available = true;
@@ -265,7 +267,7 @@ side_probe_hits_unmarked_terrain = function(_side, _target) {
 
 refresh_collision_probes();
 
-boshy_mask_meeting = function(_target, _matches = undefined) {
+boshy_mask_contact = function(_target, _matches = undefined) {
     // The original keeps Boshy's collision silhouette under every costume.
     var _boshy = boshy_character();
     var _clip = _boshy.poses[pose];
@@ -273,19 +275,48 @@ boshy_mask_meeting = function(_target, _matches = undefined) {
     var _frame = floor(pose_steps * _clip.rate);
     _frame = _clip.loop ? _frame mod _count : min(_frame, _count - 1);
 
+    // Match the movement probes' pixel origin before GameMaker rounds precise mask positions.
+    var _mask_x = floor(x);
+    var _mask_y = floor(y);
     var _terrain_mask = mask_index;
     var _previous_image = image_index;
     mask_index = facing < 0 ? _boshy.sprite_left : _boshy.sprite_right;
     image_index = _clip.frames[_frame];
-    var _hit = is_undefined(_matches) ? place_meeting(x, y, _target)
-        : instance_place_list(x, y, _target, _matches, false) > 0;
+    var _hit = is_undefined(_matches) ? instance_place(_mask_x, _mask_y, _target)
+        : instance_place_list(_mask_x, _mask_y, _target, _matches, false);
     image_index = _previous_image;
     mask_index = _terrain_mask;
     return _hit;
 };
 
+boshy_mask_meeting = function(_target, _matches = undefined) {
+    var _hit = boshy_mask_contact(_target, _matches);
+    return is_undefined(_matches) ? _hit != noone : _hit > 0;
+};
+
 touching_hazard = function() {
     return !global.debug_invincible && boshy_mask_meeting(obj_hazard);
+};
+
+force_horizontal_speed = function(_speed) {
+    hsp = _speed;
+    horizontal_speed_forced = true;
+};
+
+apply_horizontal_input = function(_movement, _right, _left) {
+    // Fusion checks both held directions before slowing toward a released direction.
+    if (_right && hsp < _movement.run_speed) {
+        hsp += _movement.acceleration;
+    }
+    if (_left && hsp > -_movement.run_speed) {
+        hsp -= _movement.acceleration;
+    }
+    if (!_right && hsp > 0) {
+        hsp -= _movement.deceleration;
+    }
+    if (!_left && hsp < 0) {
+        hsp += _movement.deceleration;
+    }
 };
 
 move_player_horizontal = function(_down_held) {

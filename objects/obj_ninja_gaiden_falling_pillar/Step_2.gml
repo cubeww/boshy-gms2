@@ -1,7 +1,7 @@
 var _player = instance_find(obj_player, 0);
 if (_player != noone && _player.hsp > 3 && _player.probe_overlaps(_player.right_probe, id)) {
     // G900 limits only positive horizontal speed.
-    _player.hsp = 3;
+    _player.force_horizontal_speed(3);
 }
 if (place_meeting(x, y, obj_player_backdrop) || ninja_pillar_flyer_overlaps(id)) {
     exit;

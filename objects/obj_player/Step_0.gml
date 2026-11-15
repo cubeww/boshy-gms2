@@ -1,5 +1,8 @@
 jumped_this_step = false;
+var _previous_speed_before_input = horizontal_speed_before_input;
+horizontal_speed_before_input = undefined;
 if (secret_1_1_poison_steps > 0) {
+    horizontal_speed_forced = false;
     stop_walk_sound();
     if (++secret_1_1_poison_steps > 50 && !die()) {
         secret_1_1_poison_steps = 0;
@@ -17,6 +20,7 @@ var _jump_key = _confused ? _keys.shoot : _keys.jump;
 var _shoot_key = _confused ? _keys.jump : _keys.shoot;
 var _pose_tick = custom_pose_timing ? 1 : delta_time / 20000;
 if (input_locked) {
+    horizontal_speed_forced = false;
     stop_walk_sound();
     if (room == rm_kid_icarus && kid_icarus_blob_player_locked()) {
         update_player_shooting(visual_facing() < 0 ? left_poses : character.poses);
@@ -76,7 +80,7 @@ if (_jump_pressed && !gravity_flip_enabled) {
     }
     if (_wall_direction != 0) {
         // The wall jump sets the horizontal launch away from the wall.
-        hsp = 5 * _wall_direction;
+        force_horizontal_speed(5 * _wall_direction);
         vsp = -_movement.jump_speed;
         grounded = false;
         air_jump_available = true;
@@ -120,6 +124,19 @@ if (_depth_stage != noone && jumped_this_step) {
     // The jump and double-jump events toggle the traps before the next movement step.
     _depth_stage.depth_phase_flipped = !_depth_stage.depth_phase_flipped;
 }
+
+var _right = keyboard_check(game_horizontal_key(_keys, true, _confused));
+var _left = keyboard_check(game_horizontal_key(_keys, false, _confused));
+var _low_latency = _settings.low_input_latency && _snake == noone;
+// A scripted speed or wall jump owns the sweep that consumes it.
+if (_low_latency && !horizontal_speed_forced) {
+    // Recompute the prepared speed with the current keys from the same starting value.
+    if (!is_undefined(_previous_speed_before_input)) {
+        hsp = _previous_speed_before_input;
+    }
+    apply_horizontal_input(_movement, _right, _left);
+}
+horizontal_speed_forced = false;
 
 if (_snake != noone) {
     desert_snake_move(id, _snake);
@@ -176,26 +193,15 @@ if (grounded) {
     }
 }
 
-// The original checks both held directions, then slows momentum toward a released direction.
-var _right = keyboard_check(game_horizontal_key(_keys, true, _confused));
-var _left = keyboard_check(game_horizontal_key(_keys, false, _confused));
-if (_right) {
-    if (hsp < _movement.run_speed) {
-        hsp += _movement.acceleration;
-    }
-    facing = 1;
+if (_low_latency) {
+    horizontal_speed_before_input = hsp;
 }
+// Room End Step events read the speed after the ordinary input update.
+apply_horizontal_input(_movement, _right, _left);
 if (_left) {
-    if (hsp > -_movement.run_speed) {
-        hsp -= _movement.acceleration;
-    }
     facing = -1;
-}
-if (!_right && hsp > 0) {
-    hsp -= _movement.deceleration;
-}
-if (!_left && hsp < 0) {
-    hsp += _movement.deceleration;
+} else if (_right) {
+    facing = 1;
 }
 
 if (jump_cut_enabled && vsp < 0 && !keyboard_check(_jump_key)
@@ -232,7 +238,7 @@ if (_depth_stage != noone || room == rm_kid_icarus) {
     }
     if (_on_wall && _jump_pressed && room == rm_kid_icarus) {
         // G898–899 launch after movement and the wall-slide checks. The left probe runs last.
-        hsp = _left_wall ? 5 : -5;
+        force_horizontal_speed(_left_wall ? 5 : -5);
         vsp = -_movement.jump_speed;
         grounded = false;
         air_jump_available = true;
@@ -262,7 +268,7 @@ if (_depth_stage != noone || room == rm_kid_icarus) {
         _on_wall = true;
         facing = -1;
         if (_jump_pressed) {
-            hsp = _left_wall ? 5 : -5;
+            force_horizontal_speed(_left_wall ? 5 : -5);
             vsp = -_movement.jump_speed;
             grounded = false;
             air_jump_available = true;
@@ -291,7 +297,7 @@ if (walk_sound != noone && (_settings.character_walk_sound || walk_sound_always)
 } else {
     stop_walk_sound();
 }
-var _refill = instance_place(x, y, obj_jump_refill);
+var _refill = boshy_mask_contact(obj_jump_refill);
 if (_refill != noone) {
     _refill.refresh_player(id);
 }

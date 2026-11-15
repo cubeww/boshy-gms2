@@ -145,8 +145,7 @@ function prehistorik_upper_step_thrower(_player) {
     static _backdrops = [obj_prehistorik_terrain_mask];
     var _on_page = _player.x >= 3200 && _player.x < 3840 && _player.y < 480;
     if (instance_exists(upper_thrower) && _on_page) {
-        if (collision_rectangle(_player.bbox_left, _player.bbox_top, _player.bbox_right, _player.bbox_bottom,
-            upper_thrower, true, true) != noone) {
+        if (_player.boshy_mask_meeting(upper_thrower)) {
             if (_player.vsp <= 0) {
                 _player.die();
                 return;
@@ -181,8 +180,7 @@ function prehistorik_upper_step_thrower(_player) {
                 animation_phase = min(1, animation_phase + 0.15);
                 image_index = floor(animation_phase);
             }
-            if (collision_rectangle(_player.bbox_left, _player.bbox_top, _player.bbox_right, _player.bbox_bottom,
-                _kick, true, true) != noone) {
+            if (_player.boshy_mask_meeting(_kick)) {
                 _player.vsp = -10;
                 audio_play_sound(snd_prehistorik_kick, 1, false);
                 _remove = true;

@@ -6,7 +6,7 @@ x += hsp;
 y += vsp;
 vsp += fall_acceleration;
 
-if (terrain_meeting(x, y)) {
+if (place_meeting(x, y, [obj_solid, obj_player_backdrop])) {
     // The original pastes the unrotated sprite into the backdrop on impact.
     image_angle = 0;
     settled = true;

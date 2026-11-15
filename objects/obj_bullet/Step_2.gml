@@ -63,7 +63,7 @@ for (var _distance = 0; _distance <= ceil(_travel_speed); ++_distance) {
         || room == rm_desert || room == rm_desert_secret || room == rm_final_path || room == rm_solgryn
         || room == rm_credits || room == rm_prize_room || room == rm_teleporter || room == rm_secret_jtv
         || room == rm_pokemon_puzzle || room == rm_wow || room == rm_cheetah_men)
-        ? place_meeting(x, y, obj_player_backdrop) : terrain_meeting(x, y)) {
+        ? place_meeting(x, y, obj_player_backdrop) : place_meeting(x, y, [obj_solid, obj_player_backdrop])) {
         instance_destroy();
         exit;
     }

@@ -40,7 +40,9 @@ options = [
     { top: 864, label: "Death\nCounter", setting: "show_deaths", limit: 1,
         help: "Turn on/off the on-screen\ndeath counter while\nplaying." },
     { top: 913, label: "Auto Fire", setting: "auto_fire", limit: 1,
-        help: "Hold Shoot to fire\nrepeatedly." }
+        help: "Hold Shoot to fire\nrepeatedly." },
+    { top: 962, label: "Low Input\nLatency", setting: "low_input_latency", limit: 1,
+        help: "Apply horizontal input\non the current frame." }
 ];
 
 controls_row = 3;
