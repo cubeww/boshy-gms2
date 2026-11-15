@@ -229,7 +229,6 @@ if (gameplay_room) {
         _checkpoint = room_get_name(_checkpoint_run.room_id) + "  " + _checkpoint;
     }
     array_push(_lines, "Checkpoint: " + _checkpoint);
-    array_push(_lines, "Invincibility (G): " + (global.debug_invincible ? "ON" : "OFF"));
 }
 array_push(_lines, "FPS: " + string(fps));
 

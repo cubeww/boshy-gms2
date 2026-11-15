@@ -295,7 +295,7 @@ boshy_mask_meeting = function(_target, _matches = undefined) {
 };
 
 touching_hazard = function() {
-    return !global.debug_invincible && boshy_mask_meeting(obj_hazard);
+    return boshy_mask_meeting(obj_hazard);
 };
 
 force_horizontal_speed = function(_speed) {
@@ -416,8 +416,8 @@ move_player_vertical = function() {
     }
 };
 
-die = function(_outside_room = false) {
-    if (dead || (global.debug_invincible && !_outside_room)) {
+die = function() {
+    if (dead) {
         return false;
     }
     dead = true;

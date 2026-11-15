@@ -18,9 +18,6 @@ if (!variable_global_exists("profile")) {
 if (!variable_global_exists("debug_overlay_visible")) {
     global.debug_overlay_visible = false;
 }
-if (!variable_global_exists("debug_invincible")) {
-    global.debug_invincible = false;
-}
 
 gameplay_room = room != rm_intro && room != rm_title && room != rm_options && room != rm_trophies
     && room != rm_dresser && room != rm_solgryn_ending;

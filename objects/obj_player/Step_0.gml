@@ -4,9 +4,8 @@ horizontal_speed_before_input = undefined;
 if (secret_1_1_poison_steps > 0) {
     horizontal_speed_forced = false;
     stop_walk_sound();
-    if (++secret_1_1_poison_steps > 50 && !die()) {
-        secret_1_1_poison_steps = 0;
-        input_locked = false;
+    if (++secret_1_1_poison_steps > 50) {
+        die();
     }
     exit;
 }
@@ -170,7 +169,7 @@ if (room == rm_biollante || room == rm_wario || room == rm_sanicz || room == rm_
         || y + 5 <= 0 || y - 25 >= room_height;
 }
 if (_outside_room) {
-    die(true);
+    die();
     exit;
 }
 if (room == rm_ninja_gaiden) {

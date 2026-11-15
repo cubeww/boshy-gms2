@@ -6,7 +6,7 @@ function game_key_is_bound(_keys, _key) {
 function game_settings_key_allowed(_key) {
     return is_numeric(_key) && _key >= 0 && _key <= 255 && _key == floor(_key)
         && _key != vk_nokey && _key != vk_anykey && _key != vk_escape
-        && _key != vk_tab && _key != vk_f3 && _key != vk_f4 && _key != vk_f5 && _key != ord("G");
+        && _key != vk_tab && _key != vk_f3 && _key != vk_f4 && _key != vk_f5;
 }
 
 function game_key_name(_key) {
@@ -152,7 +152,7 @@ function game_settings_load() {
             continue;
         }
         var _key = game_settings_read_integer("Controls", _name, vk_nokey);
-        if ((_key == vk_tab || _key == vk_f3 || _key == vk_f5 || _key == ord("G"))
+        if ((_key == vk_tab || _key == vk_f3 || _key == vk_f5)
             && !array_contains(_assigned_keys, _key)) {
             array_push(_assigned_keys, _key);
             continue;

@@ -21,8 +21,8 @@ player_spawn_costume_effect(true);
 
 options = [];
 
-gradius_player_die = function(_outside_room = false) {
-    if (dead || (global.debug_invincible && !_outside_room)) {
+gradius_player_die = function() {
+    if (dead) {
         return;
     }
 

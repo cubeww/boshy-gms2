@@ -55,12 +55,10 @@ if (!_touching) {
 switch (walker_kind) {
     case SecretOneWalker.PoisonMushroom:
         // G809–811 play the power-up cue, grow the player, then kill after 50 steps.
-        if (!global.debug_invincible) {
-            _player.secret_1_1_poison_steps = 1;
-            _player.input_locked = true;
-            _player.hsp = 0;
-            _player.vsp = 0;
-        }
+        _player.secret_1_1_poison_steps = 1;
+        _player.input_locked = true;
+        _player.hsp = 0;
+        _player.vsp = 0;
         audio_play_sound(snd_mario_power_up, 1, false);
         instance_destroy();
         break;

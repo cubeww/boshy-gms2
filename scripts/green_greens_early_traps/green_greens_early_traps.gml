@@ -110,7 +110,7 @@ function green_greens_early_step_spikes(_player) {
 
 function green_greens_early_step_kirby(_player) {
     var _kirby = early_kirby;
-    if (_player != noone && !_player.input_locked && !_kirby.carrying && !global.debug_invincible) {
+    if (_player != noone && !_player.input_locked && !_kirby.carrying) {
         // Groups 699–701 use separate horizontal and vertical suction zones.
         if (point_in_rectangle(_player.x, _player.y, _kirby.x - 100, _kirby.y - 100, _kirby.x, _kirby.y + 5)) {
             _player.x += floor(abs(_player.x - _kirby.x) * 0.05) + 3;
@@ -141,7 +141,7 @@ function green_greens_early_step_kirby(_player) {
             _player.x = _kirby.x;
             _player.y = _kirby.y;
             if (_player.bbox_top > 1920 || _player.bbox_left >= room_width) {
-                _player.die(true);
+                _player.die();
             }
         }
         ++_kirby.x;
