@@ -1,6 +1,24 @@
-++elapsed_steps;
-if (elapsed_steps >= 105 || keyboard_check_pressed(vk_enter)
-    || keyboard_check_pressed(vk_space) || keyboard_check_pressed(vk_escape)) {
+skip_intro_requested = skip_intro_requested || keyboard_check_pressed(vk_enter)
+    || keyboard_check_pressed(vk_space) || keyboard_check_pressed(vk_escape);
+if (texture_preload_pending) {
+    if (texture_preload_started_us < 0) {
+        texture_preload_started_us = get_timer();
+        texture_prefetch("Default");
+    }
+    var _ready = texture_is_ready("Default");
+    var _elapsed_us = get_timer() - texture_preload_started_us;
+    if (_ready == 0 && _elapsed_us < 15000000) {
+        exit;
+    }
+    texture_preload_pending = false;
+    if (_ready == true) {
+        show_debug_message("Startup textures ready in " + string(round(_elapsed_us / 1000)) + " ms.");
+    } else {
+        show_debug_message("Startup texture prefetch did not confirm readiness.");
+    }
+}
+
+if (++elapsed_steps >= 105 || skip_intro_requested) {
     room_goto(rm_title);
     exit;
 }

@@ -1,3 +1,8 @@
+if (texture_preload_pending) {
+    draw_boshy_text("Loading textures...", 244, 234);
+    exit;
+}
+
 var _center_x = 320;
 var _logo_y = 197;
 var _logo_scale = 15;
