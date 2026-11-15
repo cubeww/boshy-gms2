@@ -9,7 +9,7 @@ if (!defeated) {
     ++fight_age;
     ++spawn_counter;
     var _skip_intro = false;
-    if (fight_age < 300 && keyboard_check_pressed(ord("S"))) {
+    if (fight_age < 300 && keyboard_check_pressed(global.settings.keys.skip)) {
         // Group 707 seeks the theme while skipping the Koopa introduction.
         fight_age = 400;
         _skip_intro = true;

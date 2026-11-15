@@ -68,7 +68,7 @@ if (_player == noone) {
 }
 
 // G885 skips the advert after G696 has already evaluated this step.
-if (_fighting && fight_age < 2000 && keyboard_check_pressed(ord("S"))) {
+if (_fighting && fight_age < 2000 && keyboard_check_pressed(global.settings.keys.skip)) {
     x = 320;
     y = 200;
     target_x = 530;

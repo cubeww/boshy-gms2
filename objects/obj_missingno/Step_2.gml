@@ -23,7 +23,7 @@ if (victory_age >= 0) {
         case 655: intro_cry = audio_play_sound(snd_missingno_cry, 1, false); break;
         case 677: reset_boss_timer(); break;
     }
-    if (fight_age <= 649 && keyboard_check_pressed(ord("S"))) {
+    if (fight_age <= 649 && keyboard_check_pressed(global.settings.keys.skip)) {
         x = 450;
         y = 123;
         target_x = 450;

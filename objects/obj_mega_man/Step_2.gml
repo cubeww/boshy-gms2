@@ -17,7 +17,7 @@ if (victory_age < 0 && hit_points > 0) {
     if (fight_age != 551 && fight_age != 751 && fight_age != 1501) {
         ++fight_age;
     }
-    if (fight_age < 150 && keyboard_check(ord("S"))) {
+    if (fight_age < 150 && keyboard_check(global.settings.keys.skip)) {
         fight_age = 149;
         intro_cover = 128;
     }

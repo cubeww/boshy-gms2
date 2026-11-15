@@ -7,7 +7,7 @@ if (_player != noone && hit_points > 0 && _player.boshy_mask_meeting(id) && _pla
 }
 var _alive = _player != noone && !_player.dead;
 
-if (_alive && fight_age < 490 && keyboard_check_pressed(ord("S"))) {
+if (_alive && fight_age < 490 && keyboard_check_pressed(global.settings.keys.skip)) {
     fight_age = 489;
     x = 574;
     boss_target_x = 574;

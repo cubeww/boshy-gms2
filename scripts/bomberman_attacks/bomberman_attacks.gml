@@ -76,7 +76,7 @@ function bomberman_attacks_step(_player) {
                 bomberman_pose(17);
                 break;
         }
-        if (fight_age < 349 && _player != noone && keyboard_check_pressed(ord("S"))) {
+        if (fight_age < 349 && _player != noone && keyboard_check_pressed(global.settings.keys.skip)) {
             fight_age = 349;
             x = 308;
             y = 117;

@@ -75,7 +75,7 @@ if (!combat_active) {
             audio_sound_gain(_music, global.settings.music_volume * 0.007, 0);
         }
     }
-    if (keyboard_check(ord("S")) && opening_steps < 1500) {
+    if (keyboard_check(global.settings.keys.skip) && opening_steps < 1500) {
         opening_steps = 1499;
     }
     if (opening_steps == 1500) {

@@ -1,6 +1,6 @@
 function game_key_is_bound(_keys, _key) {
     return _keys.left == _key || _keys.right == _key || _keys.up == _key || _keys.down == _key
-        || _keys.jump == _key || _keys.shoot == _key || _keys.restart == _key;
+        || _keys.jump == _key || _keys.shoot == _key || _keys.restart == _key || _keys.skip == _key;
 }
 
 function game_settings_key_allowed(_key) {
@@ -111,7 +111,8 @@ function game_settings_load() {
             down: vk_down,
             jump: ord("Z"),
             shoot: ord("X"),
-            restart: ord("R")
+            restart: ord("R"),
+            skip: ord("S")
         }
     };
 
@@ -168,7 +169,7 @@ function game_settings_load() {
     }
 
     ini_close();
-    // Older settings may already use Up or Down for another action.
+    // Older settings may already use the default key of a newly added action.
     var _available_defaults = [];
     var _displaced_actions = [];
     for (var _i = 0; _i < array_length(_key_names); ++_i) {

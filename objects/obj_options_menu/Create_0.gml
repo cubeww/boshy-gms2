@@ -56,7 +56,8 @@ bindings = [
     { top: 325, label: "Jump", setting: "jump" },
     { top: 374, label: "Shoot", setting: "shoot" },
     { top: 423, label: "Restart", setting: "restart" },
-    { top: 472, label: "Back to\nOptions", action: "back" }
+    { top: 472, label: "Skip", setting: "skip" },
+    { top: 521, label: "Back to\nOptions", action: "back" }
 ];
 
 game_controller.start_stage_music(snd_options_music, true, false, 44100);

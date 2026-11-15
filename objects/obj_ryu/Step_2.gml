@@ -83,7 +83,7 @@ if (_player != noone && fight_age >= 0 && !defeated) {
             dialogue_lines = [];
             break;
     }
-    if (fight_age < 1080 && keyboard_check_pressed(ord("S"))) {
+    if (fight_age < 1080 && keyboard_check_pressed(global.settings.keys.skip)) {
         fight_age = 1080;
         dialogue_lines = [];
         y = 390;

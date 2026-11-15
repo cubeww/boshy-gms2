@@ -332,7 +332,10 @@
     {"$GMFolder":"","%Name":"Terrain","folderPath":"folders/Shared/Terrain.yy","name":"Terrain","resourceType":"GMFolder","resourceVersion":"2.0",},
   ],
   "ForcedPrefabProjectReferences":[],
-  "IncludedFiles":[],
+  "IncludedFiles":[
+    {"$GMIncludedFile":"","%Name":"changelog.txt","CopyToMask":-1,"filePath":"datafiles","name":"changelog.txt","resourceType":"GMIncludedFile","resourceVersion":"2.0",},
+    {"$GMIncludedFile":"","%Name":"readme.txt","CopyToMask":-1,"filePath":"datafiles","name":"readme.txt","resourceType":"GMIncludedFile","resourceVersion":"2.0",},
+  ],
   "isEcma":false,
   "LibraryEmitters":[],
   "MetaData":{},

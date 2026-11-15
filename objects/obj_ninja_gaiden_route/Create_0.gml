@@ -34,7 +34,7 @@ advance_route = function(_player) {
     if (boss_exit_age >= 0) {
         // G983–984 go to the next frame after 135 steps or a skip.
         ++boss_exit_age;
-        if (boss_exit_age >= 135 || keyboard_check_pressed(ord("S"))) {
+        if (boss_exit_age >= 135 || keyboard_check_pressed(global.settings.keys.skip)) {
             // G982's Megamix carries into the boss arena if it is still playing.
             if (boss_exit_music != -1 && game_controller.stage_music_instance == boss_exit_music
                 && audio_is_playing(boss_exit_music)) {

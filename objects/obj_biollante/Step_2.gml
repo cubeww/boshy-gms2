@@ -26,7 +26,7 @@ if (victory_age < 0) {
     if (fight_age == 800) {
         biollante_set_pose(spr_biollante_anim_14_left);
     }
-    if (fight_age < 830 && keyboard_check_pressed(ord("S"))) {
+    if (fight_age < 830 && keyboard_check_pressed(global.settings.keys.skip)) {
         // Groups 697–698 restart the theme and skip to the raised pose.
         biollante_start_music();
         y = 346;
