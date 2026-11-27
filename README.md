@@ -25,5 +25,9 @@ All game content except for the online features has been ported.
 ## About the Port
 This is **NOT** a remake; the focus is on faithfully recreating the original game’s physics and visual effects. Certain features that significantly enhance the gameplay experience can be enabled in the options, such as Auto Fire and Low Input Latency.
 
+## Why am I doing this?
+
+To make it compatible with Fruit Pie in the future, or to provide a reference for anyone who wants to create a true remake.
+
 ## License
 MIT License
